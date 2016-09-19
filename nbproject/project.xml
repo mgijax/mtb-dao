@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://www.netbeans.org/ns/project/1">
+    <type>org.netbeans.modules.ant.freeform</type>
+    <configuration>
+        <general-data xmlns="http://www.netbeans.org/ns/freeform-project/1">
+            <name>mtbdao</name>
+        </general-data>
+        <general-data xmlns="http://www.netbeans.org/ns/freeform-project/2">
+            <!--Do not use Project Properties customizer when editing this file manually.-->
+            <name>mtbdao</name>
+            <properties/>
+            <folders>
+                <source-folder>
+                    <label>mtbdao</label>
+                    <location>.</location>
+                    <encoding>windows-1252</encoding>
+                </source-folder>
+                <source-folder>
+                    <label>src</label>
+                    <type>java</type>
+                    <location>src</location>
+                    <encoding>windows-1252</encoding>
+                </source-folder>
+            </folders>
+            <ide-actions>
+                <action name="build">
+                    <script>nbproject/nbjdk.xml</script>
+                    <target>compile</target>
+                </action>
+                <action name="clean">
+                    <script>nbproject/nbjdk.xml</script>
+                    <target>clean</target>
+                </action>
+                <action name="javadoc">
+                    <script>nbproject/nbjdk.xml</script>
+                    <target>javadoc</target>
+                </action>
+                <action name="test">
+                    <script>nbproject/nbjdk.xml</script>
+                    <target>test</target>
+                </action>
+                <action name="rebuild">
+                    <script>nbproject/nbjdk.xml</script>
+                    <target>clean</target>
+                    <target>compile</target>
+                </action>
+                <action name="compile.single">
+                    <script>nbproject/nbjdk.xml</script>
+                    <target>compile-selected-files-in-src</target>
+                    <context>
+                        <property>files</property>
+                        <folder>src</folder>
+                        <pattern>\.java$</pattern>
+                        <format>relative-path</format>
+                        <arity>
+                            <separated-files>,</separated-files>
+                        </arity>
+                    </context>
+                </action>
+                <action name="run.single">
+                    <script>nbproject/nbjdk.xml</script>
+                    <target>run-selected-file-in-src</target>
+                    <context>
+                        <property>run.class</property>
+                        <folder>src</folder>
+                        <pattern>\.java$</pattern>
+                        <format>java-name</format>
+                        <arity>
+                            <one-file-only/>
+                        </arity>
+                    </context>
+                </action>
+            </ide-actions>
+            <export>
+                <type>folder</type>
+                <location>lib</location>
+                <script>nbproject/nbjdk.xml</script>
+                <build-target>compile</build-target>
+            </export>
+            <view>
+                <items>
+                    <source-folder style="packages">
+                        <label>src</label>
+                        <location>src</location>
+                    </source-folder>
+                    <source-file>
+                        <location>build.xml</location>
+                    </source-file>
+                </items>
+                <context-menu>
+                    <ide-action name="build"/>
+                    <ide-action name="clean"/>
+                    <ide-action name="javadoc"/>
+                    <ide-action name="test"/>
+                    <ide-action name="rebuild"/>
+                </context-menu>
+            </view>
+            <subprojects/>
+        </general-data>
+        <java-data xmlns="http://www.netbeans.org/ns/freeform-project-java/4">
+            <compilation-unit>
+                <package-root>src</package-root>
+                <classpath mode="compile">lib/mtbutils.jar;lib/jdbc/jconn2.jar;lib/dao.jar;lib/log4j-1.2.8.jar;lib</classpath>
+                <built-to>lib</built-to>
+                <source-level>1.8</source-level>
+            </compilation-unit>
+        </java-data>
+    </configuration>
+</project>

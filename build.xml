@@ -1,0 +1,302 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+===============================================================================
+MTB-DAO Application build file
+===============================================================================
+
+A "project" describes a set of targets that may be requested when Ant is 
+executed.  The "default" attribute defines the target which is executed if no 
+specific target is requested, and the "basedir" attribute defines the current 
+working directory from which Ant executes the requested task.  This is normally
+set to the current working directory.
+
+Copyright (c) 2004, 2005, 2006 The Jackson Laboratory.  All rights reserved.
+===============================================================================
+-->
+
+<project name="mtbdao" default="usage" basedir=".">
+
+<description>
+    mtbdao is a Java Data Access Object library.
+</description>
+
+<!--===================== Property Definitions =============================-->
+<property name="app.version"      value="1"/>
+<property name="app.name"         value="mtbdao"/>
+<property name="src.java.home"    value="${basedir}/src"/>
+<property name="dist.jar.name"    value="${app.name}.jar"/>
+<property name="dist.zip.name"    value="${app.name}.zip"/>
+<property name="install.jar.name" value="${app.name}-Install.jar"/>
+<property name="install.zip.name" value="${app.name}-Install.zip"/>
+
+<property file="build.properties"/>
+
+<!-- Import here to inherit the properties set from above. -->
+<import file="../common.xml"/>
+
+<!--===================== External Dependencies ============================-->
+<property name="JavaToHTML.jar"
+          value="${lib.home}/JavaToHTML.jar"/>
+
+<property name="RDBMSJavaGenerator.jar"
+          value="${lib.home}/RDBMSJavaGenerator.jar"/>
+
+<property name="mtbutils.jar"
+          value="${lib.home}/mtbutils.jar"/>
+          
+<property name="log4j.jar"
+          value="${lib.home}/log4j-1.2.8.jar"/>
+
+<property name="sybase.jar"
+          value="${lib.home}/jconn3.jar"/>
+
+<property name="mysql.jar"
+          value="${lib.home}/mysql-connector-java-5.1.7-bin.jar"/>
+
+
+<filelist id="libfiles" 
+    files="${sybase.jar} ${mtbutils.jar}"/> 
+          
+<!--===================== Custom Classpath =================================-->
+<path id="project.classpath">
+    <pathelement location="${mtbutils.jar}"/>    
+    <pathelement location="${log4j.jar}"/>    
+</path>
+
+
+<!--
+===============================================================================
+                        Dist Target
+===============================================================================
+
+The "dist" target creates a binary distribution of your application in a 
+directory structure ready to be archived in a tar.gz or zip file.  Note that 
+this target depends on two others:
+
+  * "compile" so that the entire web application (including external
+    dependencies) will have been assembled
+
+-->
+
+<target name="dist" depends="clean,compile"
+        description="Create binary distribution with documentation">
+
+    <mkdir dir="${dist.home}"/>
+    <delete file="${dist.home}/${dist.jar.name}"/>
+    <delete file="${dist.home}/${dist.zip.name}"/>
+    
+    <tstamp/>
+    <buildnumber/>
+    
+    <property name="now" value="${DSTAMP}-${TSTAMP}" />
+    <property name="app.complete.name"
+              value="${app.name}-v${app.version}.${build.number}.${now}" />
+
+
+		<move todir="${build.home}">
+        <fileset dir="${classes.home}">
+            <exclude name="src/**"/>
+            <exclude name="stylesheet.css"/>
+        </fileset>
+    </move>
+
+    <!-- Create application JAR file -->
+    <jar destfile="${dist.home}/${app.complete.name}.jar"
+         basedir="${build.home}">
+        <manifest>
+            <attribute name="Built-By" value="${user.name}"/>
+            <attribute name="Class-Path" value="jconn3.jar"/>
+        </manifest>
+    </jar>         
+
+    <!-- copy the JAR file to get rid of the version -->      
+    <copy file="${dist.home}/${app.complete.name}.jar"
+          tofile="${dist.home}/${dist.jar.name}"
+          overwrite="true"/>
+
+    <!-- Copy documentation subdirectories -->
+    <copy todir="${dist.home}/docs">
+        <fileset dir="${docs.home}">
+            <exclude name="src/**"/>
+            <exclude name="stylesheet.css"/>
+        </fileset>
+    </copy>
+
+    <!-- Create application ZIP file with documentation -->
+    <!--zip destfile="${dist.home}/${app.complete.name}.zip"
+         basedir="${dist.home}"/-->
+
+    <!-- Copy additional files to ${dist.home} as necessary -->
+    
+          
+    <!-- copy the ZIP file to get rid of the version -->      
+    <!--copy file="${dist.home}/${app.complete.name}.zip"
+          tofile="${dist.home}/${dist.zip.name}"
+          overwrite="true"/-->
+
+</target>
+
+<!--
+===============================================================================
+                        Prepare Target
+===============================================================================
+
+The "prepare" target is used to create the "build" destination directory,
+and copy the static contents of your web application to it.  If you need
+to copy static files from external dependencies, you can customize the
+contents of this task.
+
+Normally, this task is executed indirectly when needed.
+-->
+
+<target name="prepare" depends="clean">
+
+    <!-- Create build directories as needed -->
+    <mkdir dir="${build.home}"/>
+
+    <!-- Copy static content of this application -->
+    <!--
+    <copy file="${conf.home}/dao-logging.properties" 
+          tofile="${dist.home}/dao-logging.properties"
+          overwrite="true"/>
+    -->
+    <!-- Copy external dependencies as required -->
+    <!-- *** CUSTOMIZE HERE AS REQUIRED BY YOUR APPLICATION *** -->
+
+    <!-- Copy static files from external dependencies as needed -->
+    <!-- *** CUSTOMIZE HERE AS REQUIRED BY YOUR APPLICATION *** -->
+
+</target>
+
+<target name="deploy" depends="dist" description="Create distribution and copy">
+    <copy file="${dist.home}/${dist.jar.name}"
+          todir="../mtbei/lib"
+          overwrite="true"/>
+    <copy file="${dist.home}/${dist.jar.name}"
+          todir="../mtbwi/lib"
+          overwrite="true"/>
+    <copy file="${dist.home}/${dist.jar.name}"
+          todir="../mtbws/lib"
+          overwrite="true"/>
+</target>
+
+<target name="where-conf" depends="prepare">
+    <echo message="${conf.home} is conf.home" />
+    <echo message="${javac.source} ${javac.target}" />
+    
+</target>
+
+<target name="regen" depends="prepare" description="Regenereate source code from database.">
+    <delete dir="${src.home}/org/jax/mgi/mtb/dao/mtb/gen"/>
+    <java classname="us.jawsoft.apps.RDBMSJavaGenerator.Main"
+          fork="true"
+          dir="${basedir}"
+          failonerror="true"
+          maxmemory="256m">
+        <classpath>
+            <pathelement location="${mysql.jar}"/>
+            <pathelement location="${RDBMSJavaGenerator.jar}"/>
+        </classpath>
+        <arg value="${conf.home}/rdbmsgen.properties"/>
+    </java>
+</target>
+
+<!--
+===============================================================================
+                        Target Test
+===============================================================================
+
+Test the MTB-DAO library.
+-->
+
+<target name="test" 
+        description="Test the mtbdao Library.">
+        
+    <copy file="${dist.home}/${dist.jar.name}"
+          todir="${tests.home}"
+          overwrite="true"/>
+          
+    <copy file="${mtbutils.jar}"
+          todir="${tests.home}"
+          overwrite="true"/>
+          
+    <copy file="${sybase.jar}"
+          todir="${tests.home}"
+          overwrite="true"/>
+          
+    <java classname="org.jax.mgi.mtb.dao.test.StrainSearchTest"
+          fork="true"
+          dir="${tests.home}"
+          failonerror="true"
+          maxmemory="256m">
+        <classpath>
+            <pathelement location="."/>
+            <pathelement location="${mtbutils.jar}"/>
+            <pathelement location="${sybase.jar}"/>
+            <pathelement location="${tests.home}/${dist.jar.name}"/>
+        </classpath>
+    </java>
+
+              
+</target>            
+
+<!--
+===============================================================================
+                        Dist Install
+===============================================================================
+
+The "dist-install" target creates a binary distribution of your application in a 
+directory structure ready to be archived in a tar.gz or zip file.  Note that 
+this target depends on two others:
+
+  * "compile" so that the entire web application (including external
+    dependencies) will have been assembled
+
+  * "javadoc" so that the application Javadocs will have been created
+-->
+
+<target name="dist-install" 
+        description="Create self install distribution">
+
+    <delete dir="${build.home}/install"/>
+    <mkdir dir="${build.home}/install"/>
+    
+    <!-- Copy the needed libraries -->
+    <copy file="${dist.home}/${dist.jar.name}"
+          todir="${build.home}/install"
+          overwrite="true"/>
+          
+    <copy file="${oracle.jar}"
+          todir="${build.home}/install"
+          overwrite="true"/>
+
+    <copy file="${mysql.jar}"
+          todir="${build.home}/install"
+          overwrite="true"/>
+          
+    <copy file="${sybase.jar}"
+          todir="${build.home}/install"
+          overwrite="true"/>
+          
+    <zip destfile="${build.home}/${install.zip.name}"
+         basedir="${build.home}/install"/>
+         
+    <copy file="${build.home}/${install.zip.name}"
+          tofile="${build.home}/${install.jar.name}"/>
+         
+    <jar destfile="${build.home}/${install.jar.name}"
+         update="true">
+        <manifest>
+            <attribute name="Built-By" value="${user.name}"/>
+            <attribute name="Main-Class" value="SelfExtractZip"/>
+        </manifest>
+        <fileset dir="${lib.home}"
+                 includes="**/SelfExtractZip.class"/>
+    </jar>         
+    
+    <copy file="${build.home}/${install.jar.name}"
+          todir="${dist.home}"
+          overwrite="true"/>
+
+</target>
+</project>
