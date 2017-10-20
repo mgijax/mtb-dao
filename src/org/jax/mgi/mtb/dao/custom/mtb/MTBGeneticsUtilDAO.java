@@ -207,7 +207,7 @@ public class MTBGeneticsUtilDAO extends MTBUtilDAO {
          sbSelectMaster.append("   and o._organism_key =").append(organismKey).append(EOL);
       }
 
-      // genetic name
+      // genetic name 
       if (StringUtils.hasValue(nameSymbol)) {
         sbSelectMaster.append("   and m._Marker_key in (select _Marker_key from markerkeys) ").append(EOL);
 
@@ -1269,7 +1269,7 @@ public class MTBGeneticsUtilDAO extends MTBUtilDAO {
       stmtTemp = conn.createStatement();
       stmtTemp.executeUpdate(temp.toString());
       
-      sb.append("create temporary table tempdata as ").append(EOL);
+ 
       sb.append("select distinct c.chromosome, ").append(EOL);
       sb.append("       case when position('(' in og.name) = 1 ").append(EOL);
       sb.append("            then 1 ").append(EOL);
@@ -1292,7 +1292,8 @@ public class MTBGeneticsUtilDAO extends MTBUtilDAO {
       sb.append("       tc._TumorClassification_key, ").append(EOL);
       sb.append("       coalesce(aty._AgentType_key, 0) _AgentType_key, ").append(EOL);
       sb.append("       coalesce(aty.name, 'None (spontaneous)') treatmentType, ").append(EOL);
-      sb.append("       tf._TumorFrequency_key ").append(EOL);
+      sb.append("       tf._TumorFrequency_key, ").append(EOL);
+      sb.append("       og.name || ' ' || tc.name as nameStr ").append(EOL);
       sb.append("  from Allele a, ").append(EOL);
       sb.append("       AlleleMarkerAssoc ama, ").append(EOL);
       sb.append("       AlleleType ay, ").append(EOL);
@@ -1319,19 +1320,9 @@ public class MTBGeneticsUtilDAO extends MTBUtilDAO {
       sb.append("   and ty._TumorClassification_key = tc._TumorClassification_key ").append(EOL);
       sb.append("   and ty._Organ_key = og._Organ_key ").append(EOL);
       sb.append("   and a._Allele_key= tta._Allele_key ").append(EOL);
-      sb.append(" order by a.symbol, ogNameSort, og.name || ' ' || tc.name ").append(EOL);
-
-      stmtTemp = conn.createStatement();
-      
-      log.debug(sb.toString());
-      
-      stmtTemp.executeUpdate(sb.toString());
-
-      sb = new StringBuffer();
-      sb.append("select distinct * ").append(EOL);
-      sb.append("  from tempdata ").append(EOL);
-      sb.append(" where _Marker_key = ").append(markerKey).append(EOL);
-      sb.append(" order by a1symbol, ogNameSort, ogname || ' ' || tcname) ").append(EOL);
+      sb.append("   and m._Marker_key = ").append(markerKey).append(EOL);
+      sb.append(" order by a1symbol, ogNameSort, nameStr ").append(EOL);
+     
 
       stmtSelect = conn.createStatement();
       rs = stmtSelect.executeQuery(sb.toString());
@@ -1344,7 +1335,7 @@ public class MTBGeneticsUtilDAO extends MTBUtilDAO {
         ret.setGeneSymbol(rs.getString(5));
         ret.setGeneticChangeTypeName(rs.getString(10));
 
-        // another bad hack
+        
         if (ret.getGeneticChangeTypeName().toLowerCase().indexOf("transgene") >= 0) {
           ret.setMouseChromosome(null);
         }
@@ -1390,9 +1381,9 @@ public class MTBGeneticsUtilDAO extends MTBUtilDAO {
   }
 
   /**
-   * Queries the database bases on seach criteria for all corresponding
+   * Queries the database bases on search criteria for all corresponding
    * cytogentic records. 
-   * @param chromosomes Collection of chomosomes to seach with
+   * @param chromosomes Collection of chomosomes to search with
    * @param mutations Collection of mutations to search with
    * @param tumorFrequencyKeys Long[] 
    * @param maxItems int maximum number of results to return
@@ -1759,7 +1750,7 @@ public class MTBGeneticsUtilDAO extends MTBUtilDAO {
         ortho.setStrains(rs.getInt(1));
         rs = null;
         stmtStrain.clearParameters();
-        log.debug("query pair for "+ortho.getMouseGS()+" took "+ (System.currentTimeMillis() - time) + "millisecs");
+        //log.debug("query pair for "+ortho.getMouseGS()+" took "+ (System.currentTimeMillis() - time) + "millisecs");
         
       }
       stmtStrain.close();

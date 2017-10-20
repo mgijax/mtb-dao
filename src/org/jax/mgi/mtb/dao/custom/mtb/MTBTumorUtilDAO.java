@@ -49,6 +49,8 @@ import org.jax.mgi.mtb.dao.gen.mtb.StrainDTO;
 import org.jax.mgi.mtb.dao.gen.mtb.StrainSynonymsDAO;
 import org.jax.mgi.mtb.dao.gen.mtb.StrainSynonymsDTO;
 import org.jax.mgi.mtb.dao.gen.mtb.StrainTypeDTO;
+import org.jax.mgi.mtb.dao.gen.mtb.TumorClassificationDAO;
+import org.jax.mgi.mtb.dao.gen.mtb.TumorClassificationDTO;
 import org.jax.mgi.mtb.dao.gen.mtb.TumorFrequencyDAO;
 import org.jax.mgi.mtb.dao.gen.mtb.TumorFrequencyDTO;
 import org.jax.mgi.mtb.dao.gen.mtb.TumorFrequencySynonymsDAO;
@@ -251,6 +253,15 @@ public class MTBTumorUtilDAO extends MTBUtilDAO {
             + "  and acc._MTBTypes_key = 6 "
             + "  and acc._SiteInfo_key = 1 "
             + "  and tf._TumorFrequency_key = ?";
+    
+    // change the exclusion to where _tcparent_key not in (51,84,93,109,146,176,210,251,336,350,907)
+    // will match solr index exclude for human models
+    private final String SQL_TFGRID_TUMORCLASS_TEMP =
+            " create temporary table temptcplasias as "
+            + " select _TumorClassification_key "
+            + "  from TumorClassification where _tcparent_key not in (51,84,93,109,146,176,210,251,336,350,907)"; 
+    
+    /* old query
     private final String SQL_TFGRID_TUMORCLASS_TEMP =
             " create temporary table temptcplasias as "
             + "select _TumorClassification_key "
@@ -261,6 +272,7 @@ public class MTBTumorUtilDAO extends MTBUtilDAO {
             + "   and lower(name) not like '%lesion%' "
             + "   and lower(name) not like '%metaplasia%' "
             + "   and lower(name) not like '%preneoplastic lesion%'";
+    */
     private final String SQL_TFGRID_STRAINS_TEMP =
             " create temporary table tempstrains as "
             + "select count(1) num, _Strain_key "
@@ -274,7 +286,7 @@ public class MTBTumorUtilDAO extends MTBUtilDAO {
             + " group by _Strain_key having count(1) = 1";
     private final String SQL_TFGRID =
             "select sh._StrainHeredity_key, sh.name, sf._StrainFamily_key, sf.family, s._strain_key, s.name, o._Organ_key, o.name, a._AnatomicalSystem_key, a.name, tf._TumorFrequency_key, tf.freqNum, tf.incidence, o._OrganParent_key, o2.name oparent_name, tp._tumorprogression_key "
-            + "  from TumorFrequency tf left join TumorProgression tp on (tf._tumorfrequency_key = tp._child_key), "
+            + "  from TumorFrequency tf left join TumorProgression tp on (tf._tumorfrequency_key = tp._child_key) left join TumorFrequencyTreatments tft on (tf._tumorfrequency_key = tft._tumorfrequency_key), "
             + "       TumorType ty, "
             + "       Organ o, "
             + "       Organ o2, "
@@ -297,7 +309,7 @@ public class MTBTumorUtilDAO extends MTBUtilDAO {
             + "   and tf._TumorType_key = ty._TumorType_key "
             + "   and ty._TumorClassification_key = ttcp._TumorClassification_key "
             + "   and ty._Organ_key = o._Organ_key "
-            + "   and tf._TumorFrequency_key not in (select _TumorFrequency_key from TumorFrequencyTreatments) "
+            + "   and tft._TumorFrequencyTreatments_key is null "
             + "   and tf.freqNum >= 0 ";  // TODO: CHECK ON THIS
     
     private final String SQL_TFGRID_ORGANS_TEMP =
@@ -308,14 +320,14 @@ public class MTBTumorUtilDAO extends MTBUtilDAO {
              + "   and lower(o.name) not like '%unspecified%' "
             + "   and lower(a.name) not like '%unspecified%' "
             + "   and o._Organ_key in (select distinct ty._Organ_key "
-            + " from TumorFrequency tf, Strain s, TumorType ty, tempstrains ts, temptcplasias tp  "
+            + " from TumorFrequency tf  left join TumorFrequencyTreatments tft on (tf._tumorfrequency_key = tft._tumorfrequency_key), Strain s, TumorType ty, tempstrains ts, temptcplasias tp  "
             + " where tf._Strain_key = s._Strain_key "
             + "   and s._Strain_key = ts._Strain_key  " + // INBRED
             "   and tf._TumorType_key = ty._TumorType_key "
             + "   and s._StrainFamily_key is not null "
             + "   and ty._TumorClassification_key = tp._TumorClassification_key "
             + "   and tf.freqNum >= 0 "
-            + "    and tf._TumorFrequency_key not in (select _TumorFrequency_key from TumorFrequencyTreatments))";
+            + "    and tft._TumorFrequencyTreatments_key is null )";
     
     private static final String SQL_TFGRID_ORGANS_TEMP2 =
             "create temporary table temp_organs2 as "
@@ -342,7 +354,18 @@ public class MTBTumorUtilDAO extends MTBUtilDAO {
             + "   and s._Strain_key =ts._Strain_key " + // INBRED
             "   and sfha._StrainFamily_key = sf._StrainFamily_key "
             + "   and sfha._StrainHeredity_key = sh._StrainHeredity_key "
-            + " order by sh._StrainHeredity_key, sfha.ordering, s.name";  // ----------------------------------------------------- Instance Variables
+            + " order by sh._StrainHeredity_key, sfha.ordering, s.name";  
+
+    private final String SQL_TUMOR_CLASSIFICATIONS = 
+            " select tbl.name, tbl.key from (select tc.name as name, tc._tumorclassification_key as key, count(tf._tumorfrequency_key) "+
+            " as cnt from tumorclassification tc, tumortype tt left join tumorfrequency tf "+
+            " on (tt._tumortype_key =tf._tumortype_key)\n" +
+            " where tc._tumorclassification_key = tt._tumorclassification_key "+
+            " group by tc.name, tc._tumorclassification_key order by cnt desc) as tbl where tbl.cnt > 0 order by name";
+            
+
+
+// ----------------------------------------------------- Instance Variables
     private static MTBTumorUtilDAO singleton = new MTBTumorUtilDAO();
     private static final Logger log =
             Logger.getLogger(MTBTumorUtilDAO.class.getName());
@@ -2022,9 +2045,13 @@ public class MTBTumorUtilDAO extends MTBUtilDAO {
                 } else {
                     sbSelect.append("   and lower(oa.name) not like '%").append(tfParams.getOrganAffectedName().toLowerCase()).append("%' ").append(EOL);
                 }
+            }        
+            
+            if(tfParams.getSexKey() != -1){
+                sbSelect.append(" and tf._sex_key = ").append(tfParams.getSexKey()).append(EOL);
             }
            
-
+         
             if (tfParams.getColonySize() > -1) {
 
                 String strCompare = "=";
@@ -2319,6 +2346,49 @@ public class MTBTumorUtilDAO extends MTBUtilDAO {
         }
 
         return tumorRefs;
+    }
+    
+    /* Return a list of tumor classifications for which there are tumor frequencies
+        @return ArrayList<TumorClassificationDTO>
+    */
+    
+    public ArrayList<TumorClassificationDTO> getTumorClassifications(){
+        ArrayList<TumorClassificationDTO> tcs = new ArrayList<TumorClassificationDTO>();
+        
+         Connection conn = null;
+        PreparedStatement pstmt = null;
+        Statement stmt = null;
+        ResultSet rs = null;
+
+        try {
+            // get a connection
+            conn = getConnection();
+
+            
+            // create a statement
+            stmt = conn.createStatement();
+
+            // execute the statement
+            rs = stmt.executeQuery(SQL_TUMOR_CLASSIFICATIONS);
+
+            // loop through the results
+            while (rs.next()) {
+                TumorClassificationDTO dto = TumorClassificationDAO.getInstance().createTumorClassificationDTO();
+                dto.setName(rs.getString(1));
+                dto.setTumorClassificationKey(rs.getLong(2));
+                tcs.add(dto);
+            }
+        } catch (SQLException sqle) {
+            log.error("Error retrieving tumor classifications", sqle);
+        } finally {
+            close(pstmt);
+            close(stmt, rs);
+            freeConnection(conn);
+        }
+
+        
+        
+        return tcs;
     }
 
     // ------------------------------------------------------ Protected Methods

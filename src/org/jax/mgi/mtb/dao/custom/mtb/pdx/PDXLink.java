@@ -26,7 +26,7 @@ public class PDXLink extends PDXContent {
      * @param description the description to set
      */
     public void setDescription(String description) {
-        this.description = description;
+        this.description = description.replaceAll("'", "&apos;").replaceAll("\"","&apos;");
     }
 
     /**
@@ -54,7 +54,7 @@ public class PDXLink extends PDXContent {
      * @param linkText the linkText to set
      */
     public void setLinkText(String linkText) {
-        this.linkText = linkText;
+        this.linkText = linkText.replaceAll("'", "&apos;").replaceAll("\"","&apos;");
     }
 
  

@@ -13,6 +13,7 @@ public class PDXGraphic extends PDXContent {
   
     private String description;
     private String fileName;
+    private double sortOrder;
  
     
     
@@ -43,6 +44,20 @@ public class PDXGraphic extends PDXContent {
      */
     public void setFileName(String fileName) {
         this.fileName = fileName;
+    }
+
+    /**
+     * @return the sortOrder
+     */
+    public double getSortOrder() {
+        return sortOrder;
+    }
+
+    /**
+     * @param sortOrder the sortOrder to set
+     */
+    public void setSortOrder(double sortOrder) {
+        this.sortOrder = sortOrder;
     }
 
     

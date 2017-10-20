@@ -91,13 +91,7 @@ public class MTBAdvancedSearchDAO extends MTBUtilDAO {
         ,
         "insert into master select distinct tfkey from freqsfortemp"};
 
-    private final static String SQL_SEARCH_METS_TEMP =
-        "create temporary table temp_mets as "+
-        "select distinct tf._TumorFrequency_key tfkey " +
-        "  from TumorFrequency tf, " +
-        "       TumorProgression tp" +
-        " where tf._TumorFrequency_key = tp._Child_key " +
-        "   and tp._TumorProgressionType_key = 1 ";
+   
 
     private final static String SQL_ADVANCED_SEARCH =
         "select distinct tf._TumorFrequency_key, " +

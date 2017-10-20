@@ -180,7 +180,7 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
             "   and ama._Marker_key = m._Marker_key " +
             "   and m._Chromosome_key = c._Chromosome_key " +
             "   and c._Organism_key = o._Organism_key " +
-            "   and ama._AlleleMarkerAssocType_key in (1,3,4) " +
+            "   and ama._AlleleMarkerAssocType_key in (1,3,4) " +  // exclude alleles that have no expressed component (key 2: Regulatory - Promoter)
             " order by symbol ";
 
 
@@ -502,9 +502,9 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
                 sbGenetics.append("   and ap._Allele1_key = a1._Allele_key ").append(EOL);
                 sbGenetics.append("   and a1._Allele_key = ama._Allele_key ").append(EOL);
                 sbGenetics.append("   and ama._Marker_key = ml._Marker_key ").append(EOL);
-                sbGenetics.append("   and (ml.label like '%").append(strainParams.getGeneticName()).append("%' ").append(EOL);
-                sbGenetics.append("        or a1.name like '%").append(strainParams.getGeneticName()).append("%' ").append(EOL);
-                sbGenetics.append("        or a1.symbol like '%").append(strainParams.getGeneticName()).append("%') ").append(EOL);
+                sbGenetics.append("   and (lower(ml.label) like '%").append(strainParams.getGeneticName().toLowerCase()).append("%' ").append(EOL);
+                sbGenetics.append("        or lower(a1.name) like '%").append(strainParams.getGeneticName().toLowerCase()).append("%' ").append(EOL);
+                sbGenetics.append("        or lower(a1.symbol) like '%").append(strainParams.getGeneticName().toLowerCase()).append("%') ").append(EOL);
                 sbGenetics.append("   and ama._AlleleMarkerAssocType_key in (1,3,4) ").append(EOL);
                 sbGenetics.append(" union ").append(EOL);
                 sbGenetics.append("select distinct g._Strain_key ").append(EOL);
@@ -517,9 +517,9 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
                 sbGenetics.append("   and ap._Allele2_key = a2._Allele_key ").append(EOL);
                 sbGenetics.append("   and a2._Allele_key = ama._Allele_key ").append(EOL);
                 sbGenetics.append("   and ama._Marker_key = ml._Marker_key ").append(EOL);
-                sbGenetics.append("   and (ml.label like '%").append(strainParams.getGeneticName()).append("%' ").append(EOL);
-                sbGenetics.append("        or a2.name like '%").append(strainParams.getGeneticName()).append("%' ").append(EOL);
-                sbGenetics.append("        or a2.symbol like '%").append(strainParams.getGeneticName()).append("%') ").append(EOL);
+                sbGenetics.append("   and ( lower(ml.label) like '%").append(strainParams.getGeneticName().toLowerCase()).append("%' ").append(EOL);
+                sbGenetics.append("        or lower(a2.name) like '%").append(strainParams.getGeneticName().toLowerCase()).append("%' ").append(EOL);
+                sbGenetics.append("        or lower(a2.symbol) like '%").append(strainParams.getGeneticName().toLowerCase()).append("%') ").append(EOL);
                 sbGenetics.append("   and ama._AlleleMarkerAssocType_key in (1,3,4) ").append(EOL);
 
                

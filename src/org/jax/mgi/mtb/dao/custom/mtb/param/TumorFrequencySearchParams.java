@@ -60,6 +60,7 @@ public class TumorFrequencySearchParams {
     private int nFrequencyComparison = NUMERIC_COMPARE_EQUALS;
     private String orderBy;
     private int maxItems = -1;
+    private int sexKey = -1;
 
     // ----------------------------------------------------------- Constructors
 
@@ -322,4 +323,18 @@ public class TumorFrequencySearchParams {
 
     // -------------------------------------------------------- Private Methods
     // none
+
+    /**
+     * @return the sexKey
+     */
+    public int getSexKey() {
+        return sexKey;
+    }
+
+    /**
+     * @param sexKey the sexKey to set
+     */
+    public void setSexKey(int sexKey) {
+        this.sexKey = sexKey;
+    }
 }

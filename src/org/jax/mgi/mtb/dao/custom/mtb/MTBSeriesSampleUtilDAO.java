@@ -181,42 +181,62 @@ public class MTBSeriesSampleUtilDAO extends MTBUtilDAO {
 
         if (platformList.length() > 2) {
             where.append("  and sp.platform in (" + platformList + ") ").append(EOL);
+          
         }
 
-        if (strain != null && strain.length() > 0) {
-
-
-            sbStrainNameSelect.append("create temporary table tempStrain as ");
-            sbStrainNameSelect.append("select _Strain_key ").append(EOL);
-            sbStrainNameSelect.append("  from StrainSynonyms ").append(EOL);
-            sbStrainNameSelect.append(" where ").append(DAOUtils.formatCondition("name", strainComp, strain, "'"));
-            sbStrainNameSelect.append(EOL).append(" union ").append(EOL);
-            sbStrainNameSelect.append("select _Strain_key ").append(EOL);
-            sbStrainNameSelect.append("  from Strain ").append(EOL);
-            sbStrainNameSelect.append(" where ").append(DAOUtils.formatCondition("name", strainComp, strain, "'"));
-
-            from.append(", tempStrain tts ").append(EOL);
-            where.append(" and  tf._strain_key = tts._strain_key ").append(EOL);
-
-        }
+        
 
          if (tfKey != null && tfKey.length()>0 && (!"0".equals(tfKey))) {
             where.append(" and sa._object_key in (").append(tfKey).append(")").append(EOL);
         }
 
-        if (seriesId != null) {
-            where.append(" and se.id = '").append(seriesId).append("'").append(EOL);
-        }
-
-        try {
+        try { 
+            
             conn = getConnection();
-            stmt = conn.createStatement();
-            if (sbStrainNameSelect.length() > 0) {
-                stmt.addBatch(sbStrainNameSelect.toString());
-                stmt.executeBatch();
+            PreparedStatement ps;
+            
+           
+        
+            
+            
+            if (strain != null && strain.length() > 0) {
+                
+                String param = strain;
+                if("Begins".equals(strainComp)){
+                    param = "%" + strain;
+                }else if("Contains".equals(strainComp)){
+                    param = "%"+strain+"%";
+                }
+
+                sbStrainNameSelect.append("create temporary table tempStrain as ");
+                sbStrainNameSelect.append("select _Strain_key ").append(EOL);
+                sbStrainNameSelect.append("  from StrainSynonyms ").append(EOL);
+                sbStrainNameSelect.append(" where name ilike ?");
+                sbStrainNameSelect.append(EOL).append(" union ").append(EOL);
+                sbStrainNameSelect.append("select _Strain_key ").append(EOL);
+                sbStrainNameSelect.append("  from Strain ").append(EOL);
+                sbStrainNameSelect.append(" where name ilike ?");
+
+                from.append(", tempStrain tts ").append(EOL);
+                where.append(" and  tf._strain_key = tts._strain_key ").append(EOL);
+                PreparedStatement ps2 = conn.prepareStatement(sbStrainNameSelect.toString());
+                ps2.setString(1, param);
+                ps2.setString(2, param);
+                ps2.execute();
+            }
+            
+            
+             if (seriesId != null) {
+               where.append(" and se.id = ?").append(EOL);
+               ps = conn.prepareStatement(select.toString() + from.toString() + where.toString() + " order by se.id, sp.id");
+               ps.setString(1, seriesId);
+               
+            }else{
+                 ps = conn.prepareStatement(select.toString() + from.toString() + where.toString() + " order by se.id, sp.id");
             }
 
-            rs = stmt.executeQuery(select.toString() + from.toString() + where.toString() + " order by se.id, sp.id ");
+           
+            rs = ps.executeQuery();
 
             MTBSeriesSampleSearchDTO sssDTO = new MTBSeriesSampleSearchDTO();
             MTBSeriesSampleSearchDTO sampleWOSeriesDTO = new MTBSeriesSampleSearchDTO();
@@ -283,7 +303,7 @@ public class MTBSeriesSampleUtilDAO extends MTBUtilDAO {
     }
 
     private String getTFDetail(long key) {
-        return getDetail("SELECT o.name || ' ' || tc.name ||', ' ||s.name "
+        return getDetail("SELECT o.name || ' ' || tc.name ||', ' || s.name "
                 + " FROM TumorType tt, TumorClassification tc, Organ o, Strain s, TumorFrequency tf "
                 + " WHERE tt._tumorclassification_key = tc._tumorclassification_key "
                 + " and tt._organ_key = o._organ_key "

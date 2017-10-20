@@ -40,8 +40,6 @@ public class ReferenceSearchParams {
     private String authorsComparison;
     private String journal;
     private String journalComparison;
-    private String year;
-    private String yearComparison;
     private String volume;
     private String volumeComparison;
     private String pages;
@@ -145,22 +143,6 @@ public class ReferenceSearchParams {
 
     public void setJournalComparison(String journalComparison) {
         this.journalComparison = journalComparison;
-    }
-
-    public String getYear() {
-        return year;
-    }
-
-    public void setYear(String year) {
-        this.year = year;
-    }
-
-    public String getYearComparison() {
-        return yearComparison;
-    }
-
-    public void setYearComparison(String yearComparison) {
-        this.yearComparison = yearComparison;
     }
 
     public String getVolume() {

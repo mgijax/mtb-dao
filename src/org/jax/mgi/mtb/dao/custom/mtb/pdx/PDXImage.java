@@ -18,6 +18,7 @@ public class PDXImage extends PDXContent {
     private String source;
     private String passage;
     private String mouseID;
+    private double sortOrder;
    
 
     /**
@@ -130,6 +131,20 @@ public class PDXImage extends PDXContent {
      */
     public void setMouseID(String mouseID) {
         this.mouseID = mouseID;
+    }
+
+    /**
+     * @return the sortOrder
+     */
+    public double getSortOrder() {
+        return sortOrder;
+    }
+
+    /**
+     * @param sortOrder the sortOrder to set
+     */
+    public void setSortOrder(double sortOrder) {
+        this.sortOrder = sortOrder;
     }
 
    

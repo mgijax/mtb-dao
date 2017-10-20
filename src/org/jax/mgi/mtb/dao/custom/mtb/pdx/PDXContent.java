@@ -27,6 +27,7 @@ public class PDXContent {
     public static final int TUMOR_GROWTH_RATE=8;
     public static final int HISTOLOGY_SUMMARY = 9;
     public static final int PATHOLOGIST = 10;
+    public static final int REFERENCE = 11;
 
     /**
      * @return the modelID

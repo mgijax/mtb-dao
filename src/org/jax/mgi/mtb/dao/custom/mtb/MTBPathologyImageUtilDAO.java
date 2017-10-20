@@ -749,11 +749,14 @@ public class MTBPathologyImageUtilDAO  extends MTBUtilDAO {
 
             // imagePathologyDescription
             StringBuffer description = new StringBuffer();
+            
+            if(imagePathologyDescription != null && imagePathologyDescription.trim().length()>0){
 
-            description.append(DAOUtils.formatCondition("p.note", "contains", imagePathologyDescription, "'"));
-            description.append(DAOUtils.formatCondition(" or p.description", "contains", imagePathologyDescription, "'"));
-            description.append(DAOUtils.formatCondition(" or pi.caption ", "contains", imagePathologyDescription, "'"));
-
+                description.append(DAOUtils.formatCondition("p.note", "contains", imagePathologyDescription, "'"));
+                description.append(" or ").append(DAOUtils.formatCondition("p.description", "contains", imagePathologyDescription, "'"));
+                description.append(" or ").append(DAOUtils.formatCondition("pi.caption ", "contains", imagePathologyDescription, "'"));
+            }
+            
             if (description.length() > 0) {
                 sbSelect.append(" and ( ").append(EOL);
                 sbSelect.append(description);

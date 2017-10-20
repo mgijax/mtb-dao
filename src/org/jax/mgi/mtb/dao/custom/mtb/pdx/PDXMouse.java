@@ -47,6 +47,8 @@ public class PDXMouse {
     private String fusionGenes = "";
 
     private ArrayList<String> assocData = new ArrayList<String>();
+    
+    private int socGraph = 0;
 
     public PDXMouse() {
 
@@ -87,6 +89,8 @@ public class PDXMouse {
         m2.assocData = this.assocData;
         
         m2.fusionGenes = this.fusionGenes;
+        
+        m2.setSocGraph(this.getSocGraph());
 
         return m2;
     }
@@ -151,6 +155,10 @@ public class PDXMouse {
         String assocDataStr = "";
 
         StringBuffer val = new StringBuffer();
+        
+        if(this.getSocGraph()>0){
+            val.append("Dosing Studies,");
+        }
 
         if (assocData != null) {
 
@@ -164,7 +172,8 @@ public class PDXMouse {
                     val.append("Genomics,");
                 }
 
-                if (s.equals("6")) {
+                // don't show drug response if there are SOC data
+                if (s.equals("6") && this.getSocGraph()==0) {
                     val.append("Drug Response,");
                 }
 
@@ -177,12 +186,13 @@ public class PDXMouse {
                 }
 
             }
-            assocDataStr = val.toString();
+            
+
+        }
+        assocDataStr = val.toString();
             if (assocDataStr.length() > 1) {
                 assocDataStr = assocDataStr.substring(0, assocDataStr.length() - 1);
             }
-
-        }
 
         return assocDataStr;
     }
@@ -500,6 +510,20 @@ public class PDXMouse {
      */
     public void setFusionGenes(String fusionGenes) {
         this.fusionGenes = fusionGenes;
+    }
+
+    /**
+     * @return the socGraph
+     */
+    public int getSocGraph() {
+        return socGraph;
+    }
+
+    /**
+     * @param socGraph the socGraph to set
+     */
+    public void setSocGraph(int socGraph) {
+        this.socGraph = socGraph;
     }
 
 }
