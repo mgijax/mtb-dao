@@ -32,6 +32,7 @@ import org.jax.mgi.mtb.utils.Timer;
  */
 public class MTBAdvancedSearchDAO extends MTBUtilDAO {
 
+    //SQL Injection
     private final static String SQL_SEARCH_GENETIC_TEMP =
         "create temporary table temp_genetic_name  as "+
         "select distinct g._Strain_key " +

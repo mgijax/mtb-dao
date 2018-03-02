@@ -24,8 +24,6 @@ import org.jax.mgi.mtb.dao.gen.mtb.MarkerDAO;
 import org.jax.mgi.mtb.dao.gen.mtb.MarkerDTO;
 import org.jax.mgi.mtb.dao.gen.mtb.ReferenceDAO;
 import org.jax.mgi.mtb.dao.gen.mtb.ReferenceDTO;
-import org.jax.mgi.mtb.dao.gen.mtb.TumorFrequencyDAO;
-import org.jax.mgi.mtb.dao.gen.mtb.TumorFrequencyDTO;
 import org.jax.mgi.mtb.dao.mtb.MTBUtilDAO;
 import org.jax.mgi.mtb.dao.utils.DAOUtils;
 import org.jax.mgi.mtb.utils.DataBean;
@@ -496,8 +494,21 @@ public class MTBReferenceUtilDAO extends MTBUtilDAO {
                 params.setOrderBy(" a.numericPart desc ");
             }
 
+            // NO SQL Injection
             if (params.getPubYear() > 0) {
-                sbSelect.append(" and cast(r.year as integer) " + params.getPubYearComparison() + " " + params.getPubYear());
+                String comparison = "=";
+                if(">".equals(params.getPubYearComparison())){
+                    comparison = ">";
+                }
+                if("<".equals(params.getPubYearComparison())){
+                    comparison = "<";
+                }
+                int year = 3000;// no results for bad people
+                try{
+                    year = new Integer(params.getPubYear());
+                }catch(NumberFormatException nfe){}
+                        
+                sbSelect.append(" and cast(r.year as integer) " + comparison + " " + year);
             }
 
             String orderBy = params.getOrderBy();

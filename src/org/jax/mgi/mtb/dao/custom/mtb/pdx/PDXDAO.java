@@ -35,7 +35,7 @@ public class PDXDAO {
     // these genes were identified by Anuj as having expression mildly affected by the way build 38 is handled
     // this needs to be indicated in the epxression chart
     private static final String[] BUILD_38_AFFECTED_GENES = {"AKT3", "APOBEC3A", "B2M", "DAXX", "EHMT2", "EPHB6", "HLA-A", "HRAS", "ID3", "KCNQ2", "MUC4", "NOTCH4", "PIWIL1", "PTEN", "PTPRD", "RASA3", "SMARCB1"};
-
+    private static final String RNA_SEQ = "RNA_Seq";
     private static final HashMap<String, String> AFFECTED_GENES = new HashMap<>();
 
     private PDXDAO() {
@@ -660,6 +660,7 @@ public class PDXDAO {
         HashMap<String, String> sampleMap = new HashMap<String, String>();
         HashMap<String, HashMap<String, Double>> genes = new HashMap<String, HashMap<String, Double>>();
         HashMap<String, String> platformMap = new HashMap<String, String>();
+        HashMap<String, String> samplePlatformMap = new HashMap<String, String>();
         Connection con = null;
         PreparedStatement s = null;
         ResultSet rs = null;
@@ -683,6 +684,7 @@ public class PDXDAO {
                 value = rankZ;
                 platformMap.put(platform, platform);
                 sampleMap.put(sample, sample);
+                samplePlatformMap.put(sample,platform);
                 if (genes.containsKey(gene)) {
                     genes.get(gene).put(sample, value);
                 } else {
@@ -723,7 +725,122 @@ public class PDXDAO {
                 HashMap<String, Double> map = genes.get(g);
                 for (String sam : samples) {
                     if (map.get(sam) != null) {
-                        if (AFFECTED_GENES.containsKey(g)) {
+                        // affected genes are only for samples from platform RNA_Seq
+                        if (AFFECTED_GENES.containsKey(g) && RNA_SEQ.equals(samplePlatformMap.get(sam))) {
+                            result.append(",").append(df.format(map.get(sam))).append(",false");
+                        } else {
+                            result.append(",").append(df.format(map.get(sam))).append(",true");
+                        }
+                    } else {
+                        result.append(",null,true");
+                    }
+
+                }
+
+                result.append("]");
+
+            }
+
+            if (genes.size() == 0) {
+                result.delete(0, result.length());
+            }
+
+        } catch (Exception e) {
+            log.error(e);
+        } finally {
+            try {
+                rs.close();
+                s.close();
+                con.close();
+
+            } catch (Exception e) {
+                log.error(e);
+            }
+        }
+
+        return result.toString();
+
+    }
+    
+    
+    // this should be close to get model expression except it will return 
+    // log2(TPM+1) values for models from Baylor and Dana Farber
+     public String getModelTPM(String modelID) {
+
+        DecimalFormat df = new DecimalFormat("#.##");
+
+        StringBuffer result = new StringBuffer();
+        HashMap<String, String> sampleMap = new HashMap<String, String>();
+        HashMap<String, HashMap<String, Double>> genes = new HashMap<String, HashMap<String, Double>>();
+        HashMap<String, String> platformMap = new HashMap<String, String>();
+        HashMap<String, String> samplePlatformMap = new HashMap<String, String>();
+        Connection con = null;
+        PreparedStatement s = null;
+        ResultSet rs = null;
+        StringBuffer query = new StringBuffer("Select modelID,sampleName,gene,platform,tpm from pdxexpression where modelID = ?");
+        query.append(" order by gene,sampleName");
+        try {
+            con = getConnection();
+            s = con.prepareStatement(query.toString());
+            s.setString(1, modelID);
+            rs = s.executeQuery();
+            String model, sample, gene, platform;
+            Double tpm, value;
+            while (rs.next()) {
+                ArrayList<String> row = new ArrayList<String>();
+                model = rs.getString(1);
+                sample = rs.getString(2);
+                gene = rs.getString(3);
+                platform = rs.getString(4);
+                tpm = rs.getDouble(5);  // this is probably the only one that matters
+
+                // log2(TPM+1)
+                value = (Math.log(tpm+1)/Math.log(2));
+                platformMap.put(platform, platform);
+                sampleMap.put(sample, sample);
+                samplePlatformMap.put(sample,platform);
+                if (genes.containsKey(gene)) {
+                    genes.get(gene).put(sample, value);
+                } else {
+                    HashMap<String, Double> map = new HashMap<String, Double>();
+                    map.put(sample, value);
+                    genes.put(gene, map);
+                }
+
+            }
+            ArrayList<String> samples = new ArrayList<String>();
+            samples.addAll(sampleMap.keySet());
+
+            Collections.sort(samples);
+
+            ArrayList<String> platforms = new ArrayList<String>();
+            platforms.addAll(platformMap.keySet());
+
+            Collections.sort(platforms);
+            for (String pform : platforms) {
+                if (result.length() > 0) {
+                    result.append(", ");
+                }
+                result.append(pform);
+            }
+            // build the column definitions gene then one or more samples
+            result.append("['Gene'");
+            for (String sam : samples) {
+                result.append(",'").append(sam).append("',{role:'certainty'}");
+            }
+            result.append("]");
+
+            // group the expression values by gene across one or more samples
+            ArrayList<String> geneList = new ArrayList<String>();
+            geneList.addAll(genes.keySet());
+            Collections.sort(geneList);
+            for (String g : geneList) {
+                result.append(",['").append(g).append("'");
+                HashMap<String, Double> map = genes.get(g);
+                for (String sam : samples) {
+                    if (map.get(sam) != null) {
+                        // affected genes are only for samples from platform RNA_Seq
+                        if (AFFECTED_GENES.containsKey(g) && RNA_SEQ.equals(samplePlatformMap.get(sam))) {
                             result.append(",").append(df.format(map.get(sam))).append(",false");
                         } else {
                             result.append(",").append(df.format(map.get(sam))).append(",true");
@@ -763,7 +880,7 @@ public class PDXDAO {
      *
      * @param gene String gene name
      * @param mice ArrayList<PDXMouse> all mice from query results
-     * @return JSON to graph expression of gene across all mice
+     * @return String to graph expression of gene across all mice
      */
     public String getExpression(String gene, ArrayList<PDXMouse> mice) {
 
@@ -780,7 +897,7 @@ public class PDXDAO {
         }
         mouseIDs.deleteCharAt(mouseIDs.length() - 1);
 
-        StringBuffer query = new StringBuffer("Select modelID,sampleName,gene,platform,expression,expressionZ,rank,rankZ from pdxexpression where modelID in (");
+        StringBuffer query = new StringBuffer("Select modelID,sampleName,gene,rankZ from pdxexpression where modelID in (");
         query.append(mouseIDs).append(")");
         query.append(" and gene=? and platform != '' ");
         query.append("order by modelID,sampleName");
@@ -789,21 +906,16 @@ public class PDXDAO {
             s = con.prepareStatement(query.toString());
             s.setString(1, gene);
             rs = s.executeQuery();
-            String model, sample, platform;
-            Double expression, expressionZ, rank, rankZ, value;
+            String model, sample;
+            Double rankZ;
             while (rs.next()) {
                 model = rs.getString(1);
                 sample = rs.getString(2);
-                gene = rs.getString(3);
-                platform = rs.getString(4);
-                expression = rs.getDouble(5);
-                expressionZ = rs.getDouble(6);
-                rank = rs.getDouble(7);
-                rankZ = rs.getDouble(8);  // this is probably the only one that matters
+               
+                rankZ = rs.getDouble(3);  // this is apparently the only one that matters
 
-                value = rankZ;
-
-                result.append("['" + model + " : " + sample + "'," + df.format(value) + ",'" + model + "'],");
+               
+                result.append("['" + model + " : " + sample + "'," + df.format(rankZ) + ",'" + model + "'],");
 
             }
 
@@ -1279,57 +1391,36 @@ public class PDXDAO {
 
     }
 
-    /**
-     * Duplicates web service call but will be much faster if run against MTB DB
-     * Assumes upto date copy of table pdx_variation_mv from CGA database is in
-     * MTB DB
-     *
-     * @param modelID String TM#####
-     * @param gene String
-     * @param variant String
-     * @return String comma separated list of unique consequences for variant
-     */
-    public String getConsequence(String modelID, String gene, String variant) {
-
-        Integer intID = new Integer(0);
-        try {
-            modelID = modelID.substring(2);
-            intID = new Integer(modelID);
-        } catch (NumberFormatException nfe) {
-            // don't care can't do much, result will be empty
-        }
-
-        String query = "select distinct consequence,gene_symbol, amino_acid_change from pdx_variation_mv where model_id = ? and gene_symbol = ?";
-
-        String variantClause = " and amino_acid_change = ?";
-
-        boolean hasVariant = false;
-
-        if (variant != null && variant.trim().length() > 0) {
-            hasVariant = true;
-            query = query + variantClause;
-
-        }
+    public ArrayList<String> getModelsByGeneAmp(String gene){
+        return this.getModelsByGeneAmpDel(gene, true);
+    }
+    
+    public ArrayList<String> getModelsByGeneDel(String gene){
+        return this.getModelsByGeneAmpDel(gene, false);
+    }
+  
+   private ArrayList<String> getModelsByGeneAmpDel(String gene,boolean amp){
+     
+       
+        StringBuffer query=  new StringBuffer("select distinct modelid from pdxexpression where ampdel = ? and gene =? order by modelid");
+        
         Connection con = null;
         PreparedStatement s = null;
         ResultSet rs = null;
-        StringBuffer results = new StringBuffer();
-
+        ArrayList<String> results = new ArrayList<String>();
         try {
             con = getConnection();
             s = con.prepareStatement(query.toString());
-            s.setInt(1, intID);
+            if(amp){
+                s.setString(1,"Amplification");
+            }else{
+                s.setString(1,"Deletion");
+            }
             s.setString(2, gene);
-            if (hasVariant) {
-                s.setString(3, variant);
-            }
+            
             rs = s.executeQuery();
             while (rs.next()) {
-                if (rs.isLast()) {
-                    results.append(rs.getString(1));
-                } else {
-                    results.append(rs.getString(1)).append(",");
-                }
+                results.add(rs.getString(1));
             }
         } catch (Exception e) {
             log.error(e);
@@ -1344,148 +1435,9 @@ public class PDXDAO {
             }
         }
 
-        return results.toString();
-    }
-
-    /**
-     * Returns a JSON string formatted for paginated display of variation data
-     * including the total rows available Assumes upto date copy of table
-     * pdx_variation_mv from CGA database is in MTB DB
-     *
-     * @param modelID String
-     * @param limit String the number of rows to return
-     * @param start String start index for results
-     * @param sort String the sort column by name
-     * @param dir String the sort direction
-     * @return JSON String
-     */
-    public String getVariationData(String modelID, String limit, String start, String sort, String dir) {
-
-        String totalQuery = "select count(*) from pdx_variation_mv where model_id = ?";
-        String variationQuery = "select * from pdx_variation_mv where model_id = ? order by " + sort + " " + dir + " limit ? offset ? ";
-        StringBuffer result = new StringBuffer("{'total':");
-        Connection con = null;
-        PreparedStatement s = null;
-        ResultSet rs = null;
-
-        try {
-            con = getConnection();
-            s = con.prepareStatement(totalQuery.toString());
-            s.setInt(1, new Integer(modelID));
-            rs = s.executeQuery();
-            rs.next();
-            result.append(rs.getString(1));
-            result.append(",'variation':[");
-            rs.close();
-            s.close();
-
-            s = con.prepareStatement(variationQuery);
-            s.setInt(1, new Integer(modelID));
-
-            s.setInt(2, new Integer(limit));
-            s.setInt(3, new Integer(start));
-
-            rs = s.executeQuery();
-            while (rs.next()) {
-                result.append("['").append(rs.getString("model_id")).append("',");
-                result.append("'").append(rs.getString("sample_name")).append("',");
-                result.append("'").append(rs.getString("gene_symbol")).append("',");
-                result.append("'").append(rs.getString("platform")).append("',");
-                result.append("'").append(rs.getString("analysis_id")).append("',");
-                result.append("'").append(rs.getString("chromosome")).append("',");
-                result.append("'").append(rs.getString("seq_position")).append("',");
-                result.append("'").append(rs.getString("ref_allele")).append("',");
-                result.append("'").append(rs.getString("alt_allele")).append("',");
-                result.append("'").append(rs.getString("consequence")).append("',");
-                result.append("'").append(rs.getString("amino_acid_change")).append("',");
-                result.append("'").append(rs.getString("rs_variants")).append("',");
-                result.append("'").append(rs.getString("cosmic_variants")).append("',");
-                result.append("'").append(rs.getString("other_variants")).append("',");
-                result.append("'").append(rs.getString("polyphen_prediction")).append("',");
-                result.append("'").append(rs.getString("polyphen_score")).append("',");
-                result.append("'").append(rs.getString("sift_prediction")).append("',");
-                result.append("'").append(rs.getString("sift_score")).append("',");
-                result.append("'").append(rs.getString("read_depth")).append("',");
-                if (!rs.isLast()) {
-                    result.append("'").append(rs.getString("variant_frequency")).append("'],");
-                } else {
-                    result.append("'").append(rs.getString("variant_frequency")).append("']");
-                }
-
-            }
-
-            result.append("]}");
-
-        } catch (Exception e) {
-            log.error(e);
-        } finally {
-            try {
-                rs.close();
-                s.close();
-                con.close();
-
-            } catch (Exception e) {
-                log.error(e);
-            }
-        }
-        String resultStr = result.toString().replaceAll("null", " ");
-
-        return resultStr;
-    }
-
-    public ArrayList<String> getVariants(String gene, String model) {
-
-        ArrayList<String> variants = new ArrayList<String>();
-        boolean hasModel = false;
-        int modelInt = 0;
-        String query = "select distinct amino_acid_change from pdxgenevariants where gene = ? ";
-
-        if (model != null && model.trim().length() > 0) {
-            query = query + " and modelID = ?";
-            hasModel = true;
-            model = model.substring(2);
-            try {
-                modelInt = new Integer(model).intValue();
-            } catch (NumberFormatException e) {
-                hasModel = false;
-            }
-        }
-
-        query = query + " order by amino_acid_change";
-
-        Connection con = null;
-        PreparedStatement s = null;
-        ResultSet rs = null;
-
-        try {
-            con = getConnection();
-            s = con.prepareStatement(query.toString());
-            s.setString(1, gene);
-            if (hasModel) {
-                s.setInt(2, modelInt);
-            }
-            rs = s.executeQuery();
-            while (rs.next()) {
-                if (rs.getString(1).trim().length() > 0) {
-                    variants.add(rs.getString(1));
-                }
-            }
-        } catch (Exception e) {
-            log.error(e);
-        } finally {
-            try {
-                rs.close();
-                s.close();
-                con.close();
-
-            } catch (Exception e) {
-                log.error(e);
-            }
-        }
-
-        return variants;
-
-    }
+        return results;
+ 
+   }
 
     public String getHumanGenes(String query, String page, String limit) {
 

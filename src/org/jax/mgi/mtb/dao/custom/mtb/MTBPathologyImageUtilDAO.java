@@ -678,16 +678,21 @@ public class MTBPathologyImageUtilDAO  extends MTBUtilDAO {
             sbSelect.append("       a.name agentName, ").append(EOL);
             sbSelect.append("       ay.name treatmentType, ").append(EOL);
             sbSelect.append("       rPath.primaryauthor as pathologist, ").append(EOL);
-           sbSelect.append("        acc.accID ").append(EOL);
+            sbSelect.append("        acc.accID ").append(EOL);
             sbSelect.append("  from Pathology p, ").append(EOL);
             sbSelect.append("       PathologyImages pi "+joinType+" PathologyImagesProbes pip ").append(EOL);
             sbSelect.append("               on (pi._Images_key = pip._Images_key and pi._Pathology_key = pip._Pathology_key " ).append(EOL);
             
             
              // antibodies
+             //Prevent SQL Injection
             if ((antibodies != null) && (!antibodies.isEmpty())) {
                 if (antibodies.size() == 1) {
-                    sbSelect.append(" and pip._Probe_key = ").append(antibodies.iterator().next()).append(EOL);
+                    int probeKey =0;
+                    try{
+                        probeKey = new Integer((String)antibodies.iterator().next());
+                    }catch(Exception e){}
+                    sbSelect.append(" and pip._Probe_key = ").append(probeKey).append(EOL);
                 } else {
                     sbSelect.append(" and pip._Probe_key in (").append(DAOUtils.collectionToString(antibodies, ",", "")).append(") ").append(EOL);
                 }
@@ -726,7 +731,7 @@ public class MTBPathologyImageUtilDAO  extends MTBUtilDAO {
             sbSelect.append("   and tt._Organ_key = o1._Organ_key ").append(EOL);
             sbSelect.append("   and rPath._Reference_key = p._pathologist_key ").append(EOL); 
             sbSelect.append("   and rContrib._Reference_key = p._Contributor_key").append(EOL);
-            sbSelect .append("  and tf._reference_key = acc._object_key and acc._siteinfo_key = 1 and acc._mtbtypes_key = 6 ").append(EOL);
+            sbSelect.append("  and tf._reference_key = acc._object_key and acc._siteinfo_key = 1 and acc._mtbtypes_key = 6 ").append(EOL);
             sbSelect.append("   and tf._Sex_key = sx._Sex_key ").append(EOL);
 
             // organs and tissues of origin

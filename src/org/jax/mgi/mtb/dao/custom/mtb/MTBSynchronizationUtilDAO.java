@@ -4,7 +4,6 @@
  */
 package org.jax.mgi.mtb.dao.custom.mtb;
 
-import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -13,23 +12,17 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import org.apache.log4j.Logger;
-import org.jax.mgi.mtb.dao.custom.mtb.pdx.PDXMouse;
 import org.jax.mgi.mtb.dao.gen.mtb.AlleleDAO;
 import org.jax.mgi.mtb.dao.gen.mtb.AlleleDTO;
 import org.jax.mgi.mtb.dao.gen.mtb.MarkerDAO;
 import org.jax.mgi.mtb.dao.gen.mtb.MarkerDTO;
-import org.jax.mgi.mtb.dao.gen.mtb.ReferenceDAO;
 import org.jax.mgi.mtb.dao.gen.mtb.ReferenceDTO;
 import org.jax.mgi.mtb.dao.mtb.MTBUtilDAO;
-import org.jax.mgi.mtb.dao.utils.DAOUtils;
 import org.jax.mgi.mtb.utils.DataBean;
 import org.jax.mgi.mtb.utils.LabelValueBean;
-import org.jax.mgi.mtb.utils.StringUtils;
 
 /**
  * A <code>MTBUtilDAO</code> which performs operations for synchronizing the MTB data.
@@ -316,21 +309,18 @@ public class MTBSynchronizationUtilDAO extends MTBUtilDAO {
 
     }
 
-    public ReferenceDTO getReferenceFromMGI(String jnum) {
+    public String getReferenceKeyFromMGI(String jnum) {
         ReferenceDTO dto = null;
         Connection conn = null;
         Statement stmt = null;
         ResultSet rs = null;
+        String key ="";
 
         try {
             conn = getMGIConnection();
 
             StringBuffer query = new StringBuffer();
-            query.append("select r.title, r.title2, r.authors, r.authors2, r._primary, ").append(EOL);
-            query.append("       r.citation,  r.short_citation, r.journal, r.vol,").append(EOL);
-            query.append("       r.issue, r.pgs,  r.year,  ").append(EOL);
-            query.append("       r.abstract,  ").append(EOL);
-            query.append("       r.reviewStatus ").append(EOL);
+            query.append("select r._refs_key ").append(EOL);
             query.append(" from BIB_View r ").append(EOL);
             query.append("where r.jnumID = '").append(jnum).append('\'').append(EOL);
 
@@ -338,24 +328,9 @@ public class MTBSynchronizationUtilDAO extends MTBUtilDAO {
             rs = stmt.executeQuery(query.toString());
 
             while (rs.next()) {
-                dto = ReferenceDAO.getInstance().createReferenceDTO();
-
-                dto.setTitle(rs.getString(1));
-                dto.setTitle2(rs.getString(2));
-                dto.setAuthors(rs.getString(3));
-                dto.setAuthors2(rs.getString(4));
-                dto.setPrimaryAuthor(rs.getString(5));
-                dto.setCitation(rs.getString(6));
-                dto.setShortCitation(rs.getString(7));
-                dto.setJournal(rs.getString(8));
-                dto.setVolume(rs.getString(9));
-                dto.setIssue(rs.getString(10));
-                dto.setPages(rs.getString(11));
-                dto.setYear(rs.getString(12));
-                dto.setReferenceDate(new Date());
-                dto.setAbstractText(rs.getString(13));
-                dto.setReviewStatus(rs.getString(14));
-                dto.setMTBDataStatusKey(10L);
+                
+                key = rs.getString(1);
+                
             }
         } catch (SQLException ex) {
             log.error(ex);
@@ -366,7 +341,7 @@ public class MTBSynchronizationUtilDAO extends MTBUtilDAO {
             freeConnection(conn);
         }
 
-        return dto;
+        return key;
     }
 
     public AlleleDTO getAlleleFromMGI(String accid) {

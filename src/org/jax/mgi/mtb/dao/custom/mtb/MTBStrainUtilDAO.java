@@ -485,7 +485,7 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
                 stmtBatch.addBatch(sbRef.toString());
             }
 
-            // genetic name
+            // genetic name SQL Injection
             if (StringUtils.hasValue(strainParams.getGeneticName())) {
                 sbSelect.insert(sbSelect.indexOf("from ")+5, " temp_genetic_name tgn, ");
                 sbSelect.append("and s._Strain_key = tgn._Strain_key ").append(EOL);

@@ -15,6 +15,7 @@ public class PDXMouse {
 
     private String modelID;
     private String previousID;
+    private String institution;
     private String tissue = "";  // tumor site
     private String sex;
     private String age;
@@ -58,6 +59,7 @@ public class PDXMouse {
         PDXMouse m2 = new PDXMouse();
         m2.modelID = this.getModelID();
         m2.previousID = this.getPreviousID();
+        m2.institution = this.getInstitution();
         m2.tissue = this.getTissue();
         m2.sex = this.getSex();
         m2.age = this.getAge();
@@ -524,6 +526,20 @@ public class PDXMouse {
      */
     public void setSocGraph(int socGraph) {
         this.socGraph = socGraph;
+    }
+
+    /**
+     * @return the institution
+     */
+    public String getInstitution() {
+        return institution;
+    }
+
+    /**
+     * @param institution the institution to set
+     */
+    public void setInstitution(String institution) {
+        this.institution = institution;
     }
 
 }

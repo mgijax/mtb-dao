@@ -323,7 +323,7 @@ public class MTBGeneticsUtilDAO extends MTBUtilDAO {
       sbSelectTemp.append("create temporary table temptab as ");
       sbSelectTemp.append("select a._Allele_key").append(EOL);
       sbSelectTemp.append("  from Allele a ").append(EOL);
-      sbSelectTemp.append(" where 1 = 1 ").append(EOL);  // don't have to figure out if next cluase shoud start with 'where' or 'and' later on
+      sbSelectTemp.append(" where 1 = 1 ").append(EOL);  // don't have to figure out if next cluase should start with 'where' or 'and' later on
 
       boolean useTempTab = false;
 
@@ -338,6 +338,7 @@ public class MTBGeneticsUtilDAO extends MTBUtilDAO {
         sbSelectTemp.append("   and a._Allele_key = tak._Allele_key ").append(EOL);
         useTempTab = true;
 
+        // SQL Injection
         StringBuffer sbGeneticName = new StringBuffer();
         sbGeneticName.append("create temporary table allelekeys as ").append(EOL);
         sbGeneticName.append("select _Allele_key ").append(EOL);
@@ -371,7 +372,7 @@ public class MTBGeneticsUtilDAO extends MTBUtilDAO {
 
         stmtBatch.addBatch(sbAlleleTypes.toString());
       }
-
+      
       stmtBatch.addBatch(sbSelectTemp.toString());
 
       sbSelectMaster.append(" order by a._Allele_key ").append(EOL);
@@ -1065,6 +1066,7 @@ public class MTBGeneticsUtilDAO extends MTBUtilDAO {
         sbMarkerBSelect.insert(sbMarkerBSelect.indexOf("from ")+5, "tempmarkers ttm, ");
         sbMarkerBSelect.append(" and m._Marker_key = ttm._Marker_key ").append(EOL);
 
+        // SQL Injection
         StringBuffer sbMarkerName = new StringBuffer();
         sbMarkerName.append("create temporary table tempmarkers as").append(EOL);
         sbMarkerName.append("select _Marker_key ").append(EOL);
