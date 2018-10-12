@@ -646,235 +646,7 @@ public class PDXDAO {
 
     }
 
-    /**
-     * Expression graph for all genes (exome panel) for a specific model
-     *
-     * @param modelID String TM#####
-     * @return JSON string
-     */
-    public String getModelExpression(String modelID) {
-
-        DecimalFormat df = new DecimalFormat("#.##");
-
-        StringBuffer result = new StringBuffer();
-        HashMap<String, String> sampleMap = new HashMap<String, String>();
-        HashMap<String, HashMap<String, Double>> genes = new HashMap<String, HashMap<String, Double>>();
-        HashMap<String, String> platformMap = new HashMap<String, String>();
-        HashMap<String, String> samplePlatformMap = new HashMap<String, String>();
-        Connection con = null;
-        PreparedStatement s = null;
-        ResultSet rs = null;
-        StringBuffer query = new StringBuffer("Select modelID,sampleName,gene,platform,rankZ from pdxexpression where modelID = ?");
-        query.append(" and platform != '' and rankz !=0 order by gene,sampleName");
-        try {
-            con = getConnection();
-            s = con.prepareStatement(query.toString());
-            s.setString(1, modelID);
-            rs = s.executeQuery();
-            String model, sample, gene, platform;
-            Double rankZ, value;
-            while (rs.next()) {
-                ArrayList<String> row = new ArrayList<String>();
-                model = rs.getString(1);
-                sample = rs.getString(2);
-                gene = rs.getString(3);
-                platform = rs.getString(4);
-                rankZ = rs.getDouble(5);  // this is probably the only one that matters
-
-                value = rankZ;
-                platformMap.put(platform, platform);
-                sampleMap.put(sample, sample);
-                samplePlatformMap.put(sample,platform);
-                if (genes.containsKey(gene)) {
-                    genes.get(gene).put(sample, value);
-                } else {
-                    HashMap<String, Double> map = new HashMap<String, Double>();
-                    map.put(sample, value);
-                    genes.put(gene, map);
-                }
-
-            }
-            ArrayList<String> samples = new ArrayList<String>();
-            samples.addAll(sampleMap.keySet());
-
-            Collections.sort(samples);
-
-            ArrayList<String> platforms = new ArrayList<String>();
-            platforms.addAll(platformMap.keySet());
-
-            Collections.sort(platforms);
-            for (String pform : platforms) {
-                if (result.length() > 0) {
-                    result.append(", ");
-                }
-                result.append(pform);
-            }
-            // build the column definitions gene then one or more samples
-            result.append("['Gene'");
-            for (String sam : samples) {
-                result.append(",'").append(sam).append("',{role:'certainty'}");
-            }
-            result.append("]");
-
-            // group the expression values by gene across one or more samples
-            ArrayList<String> geneList = new ArrayList<String>();
-            geneList.addAll(genes.keySet());
-            Collections.sort(geneList);
-            for (String g : geneList) {
-                result.append(",['").append(g).append("'");
-                HashMap<String, Double> map = genes.get(g);
-                for (String sam : samples) {
-                    if (map.get(sam) != null) {
-                        // affected genes are only for samples from platform RNA_Seq
-                        if (AFFECTED_GENES.containsKey(g) && RNA_SEQ.equals(samplePlatformMap.get(sam))) {
-                            result.append(",").append(df.format(map.get(sam))).append(",false");
-                        } else {
-                            result.append(",").append(df.format(map.get(sam))).append(",true");
-                        }
-                    } else {
-                        result.append(",null,true");
-                    }
-
-                }
-
-                result.append("]");
-
-            }
-
-            if (genes.size() == 0) {
-                result.delete(0, result.length());
-            }
-
-        } catch (Exception e) {
-            log.error(e);
-        } finally {
-            try {
-                rs.close();
-                s.close();
-                con.close();
-
-            } catch (Exception e) {
-                log.error(e);
-            }
-        }
-
-        return result.toString();
-
-    }
-    
-    
-    // this should be close to get model expression except it will return 
-    // log2(TPM+1) values for models from Baylor and Dana Farber
-     public String getModelTPM(String modelID) {
-
-        DecimalFormat df = new DecimalFormat("#.##");
-
-        StringBuffer result = new StringBuffer();
-        HashMap<String, String> sampleMap = new HashMap<String, String>();
-        HashMap<String, HashMap<String, Double>> genes = new HashMap<String, HashMap<String, Double>>();
-        HashMap<String, String> platformMap = new HashMap<String, String>();
-        HashMap<String, String> samplePlatformMap = new HashMap<String, String>();
-        Connection con = null;
-        PreparedStatement s = null;
-        ResultSet rs = null;
-        StringBuffer query = new StringBuffer("Select modelID,sampleName,gene,platform,tpm from pdxexpression where modelID = ?");
-        query.append(" order by gene,sampleName");
-        try {
-            con = getConnection();
-            s = con.prepareStatement(query.toString());
-            s.setString(1, modelID);
-            rs = s.executeQuery();
-            String model, sample, gene, platform;
-            Double tpm, value;
-            while (rs.next()) {
-                ArrayList<String> row = new ArrayList<String>();
-                model = rs.getString(1);
-                sample = rs.getString(2);
-                gene = rs.getString(3);
-                platform = rs.getString(4);
-                tpm = rs.getDouble(5);  // this is probably the only one that matters
-
-                // log2(TPM+1)
-                value = (Math.log(tpm+1)/Math.log(2));
-                platformMap.put(platform, platform);
-                sampleMap.put(sample, sample);
-                samplePlatformMap.put(sample,platform);
-                if (genes.containsKey(gene)) {
-                    genes.get(gene).put(sample, value);
-                } else {
-                    HashMap<String, Double> map = new HashMap<String, Double>();
-                    map.put(sample, value);
-                    genes.put(gene, map);
-                }
-
-            }
-            ArrayList<String> samples = new ArrayList<String>();
-            samples.addAll(sampleMap.keySet());
-
-            Collections.sort(samples);
-
-            ArrayList<String> platforms = new ArrayList<String>();
-            platforms.addAll(platformMap.keySet());
-
-            Collections.sort(platforms);
-            for (String pform : platforms) {
-                if (result.length() > 0) {
-                    result.append(", ");
-                }
-                result.append(pform);
-            }
-            // build the column definitions gene then one or more samples
-            result.append("['Gene'");
-            for (String sam : samples) {
-                result.append(",'").append(sam).append("',{role:'certainty'}");
-            }
-            result.append("]");
-
-            // group the expression values by gene across one or more samples
-            ArrayList<String> geneList = new ArrayList<String>();
-            geneList.addAll(genes.keySet());
-            Collections.sort(geneList);
-            for (String g : geneList) {
-                result.append(",['").append(g).append("'");
-                HashMap<String, Double> map = genes.get(g);
-                for (String sam : samples) {
-                    if (map.get(sam) != null) {
-                        // affected genes are only for samples from platform RNA_Seq
-                        if (AFFECTED_GENES.containsKey(g) && RNA_SEQ.equals(samplePlatformMap.get(sam))) {
-                            result.append(",").append(df.format(map.get(sam))).append(",false");
-                        } else {
-                            result.append(",").append(df.format(map.get(sam))).append(",true");
-                        }
-                    } else {
-                        result.append(",null,true");
-                    }
-
-                }
-
-                result.append("]");
-
-            }
-
-            if (genes.size() == 0) {
-                result.delete(0, result.length());
-            }
-
-        } catch (Exception e) {
-            log.error(e);
-        } finally {
-            try {
-                rs.close();
-                s.close();
-                con.close();
-
-            } catch (Exception e) {
-                log.error(e);
-            }
-        }
-
-        return result.toString();
-
-    }
+   
 
     /**
      *
@@ -882,7 +654,7 @@ public class PDXDAO {
      * @param mice ArrayList<PDXMouse> all mice from query results
      * @return String to graph expression of gene across all mice
      */
-    public String getExpression(String gene, ArrayList<PDXMouse> mice) {
+    public String getExpression(ArrayList<PDXMouse> mice, String gene) {
 
         DecimalFormat df = new DecimalFormat("#.##");
 
@@ -912,7 +684,7 @@ public class PDXDAO {
                 model = rs.getString(1);
                 sample = rs.getString(2);
                
-                rankZ = rs.getDouble(3);  // this is apparently the only one that matters
+                rankZ = rs.getDouble(4);  // this is apparently the only one that matters
 
                
                 result.append("['" + model + " : " + sample + "'," + df.format(rankZ) + ",'" + model + "'],");
@@ -1121,7 +893,7 @@ public class PDXDAO {
 
     }
     
-     public String getModelCNVJSON(String modelID) {
+     private String getModelCNVJSON(String modelID) {
 
         DecimalFormat df = new DecimalFormat("##.####");
 
