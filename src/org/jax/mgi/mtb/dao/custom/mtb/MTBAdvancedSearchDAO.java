@@ -115,7 +115,8 @@ public class MTBAdvancedSearchDAO extends MTBUtilDAO {
         "       a._Agent_key, " +
         "       a.name agentName, " +
         "       st.type, " +
-        "       acc.accID "+
+        "       acc.accID, "+
+        "       tf.incidence "+
         "  from TumorFrequency tf left join "+
         "     (TumorFrequencyTreatments tft join Agent a on ( tft._Agent_key = a._Agent_key ) "+
 			  "       join AgentType aty on ( a._AgentType_key = aty._AgentType_key )) "+
@@ -128,7 +129,7 @@ public class MTBAdvancedSearchDAO extends MTBUtilDAO {
         "       Organ oa, " +
         "       Organ ot, " +
         "       master m, " +
-        "       Accession acc " +
+        "       Accession acc " +   
         " where tf._TumorType_key = tt._TumorType_key " +
         "   and tt._TumorClassification_key = tc._TumorClassification_key " +
         "   and tt._Organ_key = ot._Organ_key " +
@@ -427,6 +428,7 @@ public class MTBAdvancedSearchDAO extends MTBUtilDAO {
                 currentTumor.setParentFrequencyKey(rs.getInt(2));
                 currentTumor.setImages(rs.getInt(5) > 0);
                 currentTumor.setOrganOfOriginKey(rs.getInt(6));
+                currentTumor.setOrganOfOriginName(rs.getString(7));
                 currentTumor.setTumorClassKey(rs.getInt(8));
                 currentTumor.setTumorClassName(rs.getString(9));
                 currentTumor.setTumorName(rs.getString(10));
@@ -437,6 +439,7 @@ public class MTBAdvancedSearchDAO extends MTBUtilDAO {
                 currentTumor.setOrganAffectedName(rs.getString(15));
                 currentTumor.setTreatmentType(DAOUtils.nvl(rs.getString(17), NONE));
                 currentTumor.setRefAccId(rs.getString(21));
+                currentTumor.setIncidence(rs.getDouble(22));
 
                 if (prevTumor.getTumorFrequencyKey() == currentTumor.getTumorFrequencyKey()) {
                     MTBStrainTumorDetailsDTO ts = tumors.get(tumors.size() - 1);

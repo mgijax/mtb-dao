@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.log4j.Logger;
 import org.jax.mgi.mtb.dao.utils.DAOUtils;
 import org.jax.mgi.mtb.utils.StringUtils;
 
@@ -53,13 +54,16 @@ public class MTBStrainTumorSummaryDTO {
     private Collection<String> collectionAgents;
     private Collection<String> collectionStrainTypes;
     private Collection<String> collectionReferences;
+    
+    private static final Logger log =
+            Logger.getLogger(MTBStrainTumorSummaryDTO.class.getName());
    
     // ----------------------------------------------------------- Constructors
 
     public MTBStrainTumorSummaryDTO(MTBStrainTumorDetailsDTO detail) {
         setTumorName(detail.getTumorName());
         setTumorClassName(detail.getTumorClassName());
-        setTumorOrganName(detail.getTumorOrganName());
+        setTumorOrganName(detail.getOrganOfOriginName());
         setAgents(detail.getAgents());
         setTreatmentType(detail.getTreatmentType());
         setOrganAffectedName(detail.getOrganAffectedName());
@@ -237,6 +241,35 @@ public class MTBStrainTumorSummaryDTO {
 
     public final String getFreqUnknownString() {
         return getFrequencyString(freqUnknown);
+    }
+    
+    
+    
+    public final Double getMaxFreqMale() {
+        return getMax(getFrequencyString(freqMale));
+    }
+
+    public final Double getMaxFreqFemale() {
+        return getMax(getFrequencyString(freqFemale));
+    }
+
+    public final Double getMaxFreqMixed() {
+        return getMax(getFrequencyString(freqMixed));
+    }
+
+    public final Double getMaxFreqUnknown() {
+        return getMax(getFrequencyString(freqUnknown));
+    }
+    
+    private final Double getMax(String freq){
+        String[] parts = freq.split("-");
+        if(parts.length == 1){
+            return freqToDouble(parts[0]);
+        }else if(parts.length == 2){
+            return freqToDouble(parts[1].trim());
+        }
+        log.error("unable to determine maximum frequency for "+freq);
+        return -1d; // would null be preferable?
     }
     
     public final String getFreqAllString(){

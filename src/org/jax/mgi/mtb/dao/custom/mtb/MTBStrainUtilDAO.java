@@ -848,6 +848,7 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
                 currentTumor.setMetastasis(rs.getInt(4) == 1);
                 currentTumor.setImages(rs.getInt(5) > 0);
                 currentTumor.setOrganOfOriginKey(rs.getInt(6));
+                currentTumor.setOrganOfOriginName(rs.getString(7));
                 currentTumor.setTumorClassKey(rs.getInt(8));
                 currentTumor.setTumorName(rs.getString(10));
                 currentTumor.setStrainKey(rs.getInt(11));

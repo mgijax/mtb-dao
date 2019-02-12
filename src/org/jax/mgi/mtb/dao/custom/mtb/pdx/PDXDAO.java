@@ -34,7 +34,7 @@ public class PDXDAO {
    
 
     private PDXDAO() {
-
+       
     }
 
     public void setConnectionInfo(String driver, String url, String pwd, String user) {

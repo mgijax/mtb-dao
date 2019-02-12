@@ -6,6 +6,7 @@ package org.jax.mgi.mtb.dao.custom.mtb.pdx;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 
 /**
  *
@@ -47,7 +48,9 @@ public class PDXMouse {
     // this is formatted for display not searching
     private String fusionGenes = "";
 
-    private ArrayList<String> assocData = new ArrayList<String>();
+    private ArrayList<String> assocData = new ArrayList();
+    
+    private HashMap<String, Double> tmb = new HashMap();
     
     private int socGraph = 0;
 
@@ -93,6 +96,8 @@ public class PDXMouse {
         m2.fusionGenes = this.fusionGenes;
         
         m2.setSocGraph(this.getSocGraph());
+        
+        m2.tmb = this.tmb;
 
         return m2;
     }
@@ -542,4 +547,29 @@ public class PDXMouse {
         this.institution = institution;
     }
 
+    public HashMap<String,Double> getTMB(){
+        return this.tmb;
+    }
+    
+    public void setTMB(HashMap<String,Double> tmbIn){
+        this.tmb = tmbIn;
+    }
+    
+    public boolean tmbGreaterThan(Double gt){
+        for(Double tmbScore : this.tmb.values()){
+            if(tmbScore > gt){
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    public boolean tmbLessThan(Double lt){
+        for(Double tmbScore : this.tmb.values()){
+            if(tmbScore < lt){
+                return true;
+            }
+        }
+        return false;
+    }
 }

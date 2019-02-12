@@ -36,11 +36,12 @@ public class MTBStrainTumorDetailsDTO {
     private String reproductiveStatus;
     private int tumorClassKey = -1;
     private int organOfOriginKey = -1;
-    private String tumorOrganName;
+    private String organOfOriginName;
     private Collection<String> agents;
     private Collection<String> agentKeys;
     private String sex;
     private String frequency;
+    private Double incidence;
     private boolean images = false;
     private String treatmentType;
     private String organAffectedName;
@@ -85,7 +86,7 @@ public class MTBStrainTumorDetailsDTO {
         setStrainName(strainName);
         setStrainDescription(strainDescription);
         setTumorClassName(tcName);
-        setTumorOrganName(toName);
+        setOrganOfOriginName(toName);
         setAgents(agents);
         setSex(sex);
         setFrequency(frequency);
@@ -161,12 +162,12 @@ public class MTBStrainTumorDetailsDTO {
         return this.tumorClassName;
     }
 
-    public void setTumorOrganName(String name) {
-        this.tumorOrganName = name;
+    public void setOrganOfOriginName(String name) {
+        this.organOfOriginName = name;
     }
 
-    public String getTumorOrganName() {
-        return this.tumorOrganName;
+    public String getOrganOfOriginName() {
+        return this.organOfOriginName;
     }
 
     public void setOrganOfOriginKey(int key) {
@@ -343,7 +344,7 @@ public class MTBStrainTumorDetailsDTO {
         sb.append("<TUMOR_CLASS_NAME>").append(tumorClassName).append("</TUMOR_CLASS_NAME>").append(NL);
         sb.append("<TUMOR_CLASS_KEY>").append(tumorClassKey).append("</TUMOR_CLASS_KEY>").append(NL);
         sb.append("<ORGAN_OF_ORIGIN_KEY>").append(organOfOriginKey).append("</ORGAN_OF_ORIGIN_KEY>").append(NL);
-        sb.append("<TUMOR_ORGAN_NAME>").append(tumorOrganName).append("</TUMOR_ORGAN_NAME>").append(NL);
+        sb.append("<ORGAN_OF_ORIGIN_NAME>").append(organOfOriginName).append("</ORGAN_OF_ORIGIN_NAME>").append(NL);
         sb.append("<AGENTS>").append(agents).append("</AGENTS>").append(NL);
         sb.append("<AGENT_KEYS>").append(agentKeys).append("</AGENT_KEYS>").append(NL);
         sb.append("<SEX>").append(sex).append("</SEX>").append(NL);
@@ -363,4 +364,18 @@ public class MTBStrainTumorDetailsDTO {
 
     // -------------------------------------------------------- Private Methods
     // none
+
+    /**
+     * @return the incidence
+     */
+    public Double getIncidence() {
+        return incidence;
+    }
+
+    /**
+     * @param incidence the incidence to set
+     */
+    public void setIncidence(Double incidence) {
+        this.incidence = incidence;
+    }
 }
