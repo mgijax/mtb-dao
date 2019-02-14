@@ -262,6 +262,7 @@ public class MTBStrainTumorSummaryDTO {
     }
     
     private final Double getMax(String freq){
+        if(freq == null) return null;
         String[] parts = freq.split("-");
         if(parts.length == 1){
             return freqToDouble(parts[0]);

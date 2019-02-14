@@ -546,6 +546,26 @@ public class PDXMouse {
     public void setInstitution(String institution) {
         this.institution = institution;
     }
+    
+    public String getTMBStr(){
+        if(this.tmb.isEmpty()){
+            return "";
+        }
+        if(this.tmb.size() == 1){
+            return this.tmb.values().iterator().next().toString();
+        }
+        Double min = 10000d;
+        Double max = 0d;
+        for(Double d : this.tmb.values()){
+            if(d > max){
+                max = d;
+            }
+            if(d < min){
+                min = d;
+            }
+        }
+        return "min:"+min+" max:"+max;
+    }
 
     public HashMap<String,Double> getTMB(){
         return this.tmb;
@@ -557,7 +577,7 @@ public class PDXMouse {
     
     public boolean tmbGreaterThan(Double gt){
         for(Double tmbScore : this.tmb.values()){
-            if(tmbScore > gt){
+            if(tmbScore >= gt){
                 return true;
             }
         }
@@ -566,7 +586,7 @@ public class PDXMouse {
     
     public boolean tmbLessThan(Double lt){
         for(Double tmbScore : this.tmb.values()){
-            if(tmbScore < lt){
+            if(tmbScore <= lt){
                 return true;
             }
         }
