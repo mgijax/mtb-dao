@@ -41,7 +41,6 @@ public class MTBStrainTumorDetailsDTO {
     private Collection<String> agentKeys;
     private String sex;
     private String frequency;
-    private Double incidence;
     private boolean images = false;
     private String treatmentType;
     private String organAffectedName;
@@ -359,23 +358,5 @@ public class MTBStrainTumorDetailsDTO {
         return sb.toString();
     }
 
-    // ------------------------------------------------------ Protected Methods
-    // none
-
-    // -------------------------------------------------------- Private Methods
-    // none
-
-    /**
-     * @return the incidence
-     */
-    public Double getIncidence() {
-        return incidence;
-    }
-
-    /**
-     * @param incidence the incidence to set
-     */
-    public void setIncidence(Double incidence) {
-        this.incidence = incidence;
-    }
+   
 }

@@ -115,8 +115,7 @@ public class MTBAdvancedSearchDAO extends MTBUtilDAO {
         "       a._Agent_key, " +
         "       a.name agentName, " +
         "       st.type, " +
-        "       acc.accID, "+
-        "       tf.incidence "+
+        "       acc.accID" +
         "  from TumorFrequency tf left join "+
         "     (TumorFrequencyTreatments tft join Agent a on ( tft._Agent_key = a._Agent_key ) "+
 			  "       join AgentType aty on ( a._AgentType_key = aty._AgentType_key )) "+
@@ -439,7 +438,7 @@ public class MTBAdvancedSearchDAO extends MTBUtilDAO {
                 currentTumor.setOrganAffectedName(rs.getString(15));
                 currentTumor.setTreatmentType(DAOUtils.nvl(rs.getString(17), NONE));
                 currentTumor.setRefAccId(rs.getString(21));
-                currentTumor.setIncidence(rs.getDouble(22));
+               
 
                 if (prevTumor.getTumorFrequencyKey() == currentTumor.getTumorFrequencyKey()) {
                     MTBStrainTumorDetailsDTO ts = tumors.get(tumors.size() - 1);
