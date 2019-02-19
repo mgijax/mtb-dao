@@ -41,7 +41,7 @@ public class MTBStrainTumorDetailsDTO {
     private Collection<String> agentKeys;
     private String sex;
     private String frequency;
-    private boolean images = false;
+    private int images = 0;
     private String treatmentType;
     private String organAffectedName;
     private int parentFrequencyKey = -1;
@@ -59,7 +59,7 @@ public class MTBStrainTumorDetailsDTO {
      * Creates a new instance of MTBStrainTumorDetailsDTO
      */
     public MTBStrainTumorDetailsDTO() {
-        this(-1, -1, -1, null, null, -1, null, -1, null, null, null, null, null, false, null, null, null);
+        this(-1, -1, -1, null, null, -1, null, -1, null, null, null, null, null, 0, null, null, null);
     }
 
     public MTBStrainTumorDetailsDTO(int tfKey,
@@ -75,7 +75,7 @@ public class MTBStrainTumorDetailsDTO {
                                     Collection<String> agentsKey,
                                     String sex,
                                     String frequency,
-                                    boolean images,
+                                    int images,
                                     String treatment,
                                     String organAffected,
                                     String refAccId) {
@@ -209,11 +209,15 @@ public class MTBStrainTumorDetailsDTO {
         return this.frequency;
     }
 
-    public void setImages(boolean imgs) {
+    public void setImages(int imgs) {
         this.images = imgs;
     }
 
     public boolean getImages() {
+        return this.images > 0;
+    }
+    
+    public int getImageCount(){
         return this.images;
     }
     

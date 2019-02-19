@@ -2243,7 +2243,7 @@ public class MTBTumorUtilDAO extends MTBUtilDAO {
                 currentTumor.setTumorFrequencyKey(rs.getInt(1));
                 currentTumor.setParentFrequencyKey(rs.getInt(2));
                 //set images if there are pathology or assay images
-                currentTumor.setImages((rs.getInt(5) > 0) || (rs.getInt(21) > 0));
+                currentTumor.setImages(rs.getInt(5)  + rs.getInt(21));
                 currentTumor.setOrganOfOriginKey(rs.getInt(6));
                 currentTumor.setOrganOfOriginName(rs.getString(7));
                 currentTumor.setTumorClassKey(rs.getInt(8));

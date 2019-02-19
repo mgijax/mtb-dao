@@ -425,7 +425,7 @@ public class MTBAdvancedSearchDAO extends MTBUtilDAO {
                 MTBStrainTumorDetailsDTO currentTumor = new MTBStrainTumorDetailsDTO();
                 currentTumor.setTumorFrequencyKey(rs.getInt(1));
                 currentTumor.setParentFrequencyKey(rs.getInt(2));
-                currentTumor.setImages(rs.getInt(5) > 0);
+                currentTumor.setImages(rs.getInt(5));
                 currentTumor.setOrganOfOriginKey(rs.getInt(6));
                 currentTumor.setOrganOfOriginName(rs.getString(7));
                 currentTumor.setTumorClassKey(rs.getInt(8));

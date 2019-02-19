@@ -37,7 +37,7 @@ public class MTBStrainTumorSummaryDTO {
     private int organOfOriginKey = -1;
     private Collection agentKeys = null;
     private Collection agents;
-    private boolean images = false;
+    private int images = 0;
     private boolean metastasis = false;
     private String treatmentType;
     private String organAffectedName;
@@ -76,7 +76,7 @@ public class MTBStrainTumorSummaryDTO {
         freqUnknown = new ArrayList<String>();
         metastasizesTo = new ArrayList<String>();
         refAccIds = new HashMap<String, String>();
-        setImages(detail.getImages());
+        setImages(detail.getImageCount());
         setMetastasis(detail.getMetastasis());
         setAgentKeys(detail.getAgentKeys());
         setStrainKey(detail.getStrainKey());
@@ -96,6 +96,10 @@ public class MTBStrainTumorSummaryDTO {
         if (frequencyKey == parentFrequencyKey) {
             setOrganAffectedName(detail.getOrganAffectedName());
         }
+    }
+    
+    public static void main(String[] args){
+        System.out.println("test");
     }
 
     // --------------------------------------------------------- Public Methods
@@ -165,7 +169,7 @@ public class MTBStrainTumorSummaryDTO {
             freqUnknown.add(freq);
         }
 
-        setImages(this.getImages() ? true : detail.getImages());
+        setImages(detail.getImageCount());
         setMetastasis(detail.getMetastasis());
 
         if (this.frequencyKey == -1) {
@@ -212,7 +216,7 @@ public class MTBStrainTumorSummaryDTO {
         freqUnknown.addAll(sum.getFreqUnknown());
         refAccIds.putAll(sum.getRefAccIds());
         metastasizesTo.addAll(sum.getMetastasizesTo());
-        setImages(this.getImages() ? true : sum.getImages());
+        setImages(sum.getImageCount());
     }
     
    public Collection<String> getAgentsCollection() {
@@ -330,11 +334,13 @@ public class MTBStrainTumorSummaryDTO {
         return this.agents;
     }
 
-    public final void setImages(boolean images) {
+    public final void setImages(int images) {
         // one detail rec having images is enough to set the images to true
         //if (this.images == false) {
-        if (!this.images) {
+        if (this.images == 0) {
             this.images = images;
+        }else{ 
+            this.images = this.images + images;
         }
     }
 
@@ -351,6 +357,10 @@ public class MTBStrainTumorSummaryDTO {
     }
 
     public boolean getImages() {
+        return this.images > 0;
+    }
+    
+    public int getImageCount(){
         return this.images;
     }
 
@@ -494,7 +504,8 @@ public class MTBStrainTumorSummaryDTO {
             if (array.size() == 0) {
                 return null;
             } else if (array.size() == 1) {
-                return array.get(0);
+                // process single values, they could use it
+             //   return array.get(0);
             }
 
             int i = 0;

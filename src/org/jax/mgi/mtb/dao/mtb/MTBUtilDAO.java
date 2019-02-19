@@ -160,7 +160,7 @@ public class MTBUtilDAO {
                     sumTemp.addMetastasizesTo(detail.getOrganAffectedName());
                 }
  
-                sumTemp.setImages(detail.getImages());
+                sumTemp.setImages(detail.getImageCount());
                 sumTemp.setMetastasis(detail.getMetastasis());
             } else {
                 sumTemp = new MTBStrainTumorSummaryDTO(detail);

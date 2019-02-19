@@ -846,7 +846,7 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
                 currentTumor.setTumorFrequencyKey(rs.getInt(1));
                 currentTumor.setParentFrequencyKey(rs.getInt(2));
                 currentTumor.setMetastasis(rs.getInt(4) == 1);
-                currentTumor.setImages(rs.getInt(5) > 0);
+                currentTumor.setImages(rs.getInt(5));
                 currentTumor.setOrganOfOriginKey(rs.getInt(6));
                 currentTumor.setOrganOfOriginName(rs.getString(7));
                 currentTumor.setTumorClassKey(rs.getInt(8));
@@ -1128,7 +1128,7 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
                     sumTemp.addTFKeyWithFrequency(detail.getTumorFrequencyKey());
                 }
 
-                sumTemp.setImages(detail.getImages());
+                sumTemp.setImages(detail.getImageCount());
                 sumTemp.setMetastasis(detail.getMetastasis());
             } else {
                 sumTemp = new MTBStrainTumorSummaryDTO(detail);
