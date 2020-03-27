@@ -1351,7 +1351,9 @@ public class MTBTumorUtilDAO extends MTBUtilDAO {
             sbSelect.append("      (select count(1) from TumorGeneticChanges tgc, TmrGntcCngAssayImageAssoc aia, AssayImages ai ").append(EOL);
             sbSelect.append("         where tgc._TumorFrequency_key = tf._TumorFrequency_key and aia._tumorgeneticchanges_key = tgc._tumorgeneticchanges_key ").append(EOL);
             sbSelect.append("         and aia._assayImages_key = ai._assayImages_key and ai.privateFlag = 0) numAssayImages, ").append(EOL);
-            sbSelect.append("      (select count(1) from SampleAssoc where _mtbtypes_key = 5 and _object_key = tf._tumorfrequency_key) numSamples ").append(EOL);
+            sbSelect.append("      (select count(1) from SampleAssoc where _mtbtypes_key = 5 and _object_key = tf._tumorfrequency_key) numSamples, ").append(EOL);
+            sbSelect.append("      rf.shortCitation,").append(EOL);
+            sbSelect.append("      rf.year").append(EOL);
             sbSelect.append(" from TumorFrequency tf left join ").append(EOL);
             sbSelect.append("  (TumorFrequencyTreatments tft join Agent a on ( tft._Agent_key = a._Agent_key ) ").append(EOL);
             sbSelect.append("   join AgentType aty on ( a._AgentType_key = aty._AgentType_key )) ").append(EOL);
@@ -1362,12 +1364,14 @@ public class MTBTumorUtilDAO extends MTBUtilDAO {
             sbSelect.append("      Strain s, ").append(EOL);
             sbSelect.append("      Sex sx, ").append(EOL);
             sbSelect.append("      Organ oa, ").append(EOL);
-            sbSelect.append("      Organ ot ").append(EOL);
+            sbSelect.append("      Organ ot, ").append(EOL);
+             sbSelect.append("     Reference rf ").append(EOL);
             sbSelect.append("where tf._TumorType_key = tt._TumorType_key ").append(EOL);
             sbSelect.append("  and tt._TumorClassification_key = tc._TumorClassification_key ").append(EOL);
             sbSelect.append("  and tt._Organ_key = ot._Organ_key ").append(EOL);
             sbSelect.append("  and tf._Strain_key = s._Strain_key ").append(EOL);
             sbSelect.append("  and tf._Sex_key = sx._Sex_key ").append(EOL);
+            sbSelect.append("  and tf._Reference_key = rf._reference_key ").append(EOL);
             sbSelect.append("  and tf._Reference_key = acc._Object_key ").append(EOL);
             sbSelect.append("  and acc._MTBTypes_key = 6 ").append(EOL);
             sbSelect.append("  and acc._SiteInfo_key = 1 ").append(EOL);
@@ -1390,7 +1394,7 @@ public class MTBTumorUtilDAO extends MTBUtilDAO {
                 sbSelect.append(tumorFrequencyClause);
                 sbSelect.append(") ").append(EOL);
             }
-// this might break things it was order by coalesce (sort_order, _Parent_key),...
+
             sbSelect.append(" order by 3,2, metastasis, organAffected ");
 
             log.debug(sbSelect.toString());
@@ -1426,6 +1430,9 @@ public class MTBTumorUtilDAO extends MTBUtilDAO {
                 current.setNumPathEntries(rs.getInt(20));
                 current.setNumImages(rs.getInt(21));
                 current.setOrganAffected(rs.getString(22));
+                if(current.getIsParent()){
+                    tumor.setOrganAffected(rs.getString(22));
+                }
                 tumor.setTreatmentType(DAOUtils.nvl(rs.getString(23), NONE));
                 String agentKey = rs.getString(25);
                 String agent = rs.getString(26);
@@ -1437,6 +1444,8 @@ public class MTBTumorUtilDAO extends MTBUtilDAO {
                 }
                 current.setNumAssayImages(rs.getInt(30));
                 current.setNumSamples(rs.getInt(31));
+                current.setShortCitation(rs.getString(32));
+                current.setRefYear(rs.getString(33));
 
                 // redundant, set over and over again
                 tumor.setTumorClassification(rs.getString(5));
@@ -1491,6 +1500,8 @@ public class MTBTumorUtilDAO extends MTBUtilDAO {
 
             Arrays.sort(arrTemp, new MTBTumorFrequencySummaryComparator(0));
             tumorFreqRecs = new ArrayList<MTBTumorFrequencySummaryDTO>(Arrays.asList(arrTemp));
+            
+            //  need reference details (citation? firstauthor? year?)
 
             tumor.setFrequencyRecs(tumorFreqRecs);
 
@@ -2616,7 +2627,7 @@ public class MTBTumorUtilDAO extends MTBUtilDAO {
             }
 
         } catch (SQLException sqle) {
-            log.error("Error retriveing cytogenetics information for tumor frequency key " + lKey, sqle);
+            log.error("Error retrieving cytogenetics information for tumor frequency key " + lKey, sqle);
         } finally {
             close(stmtSelect, rs);
             freeConnection(conn);

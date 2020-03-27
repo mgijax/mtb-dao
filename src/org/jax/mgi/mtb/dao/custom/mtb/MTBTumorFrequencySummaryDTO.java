@@ -48,6 +48,8 @@ public class MTBTumorFrequencySummaryDTO {
     private int numSamples = -1;
     private int sortOrder;
     private boolean isParent = false;
+    private String shortCitation = null;
+    private String refYear = null;
 
     // ----------------------------------------------------------- Constructors
     // none
@@ -256,4 +258,32 @@ public class MTBTumorFrequencySummaryDTO {
 
     // -------------------------------------------------------- Private Methods
     // none
+
+    /**
+     * @return the shortCitation
+     */
+    public String getShortCitation() {
+        return shortCitation;
+    }
+
+    /**
+     * @param shortCitation the shortCitation to set
+     */
+    public void setShortCitation(String shortCitation) {
+        this.shortCitation = shortCitation;
+    }
+
+    /**
+     * @return the refYear
+     */
+    public String getRefYear() {
+        return refYear;
+    }
+
+    /**
+     * @param refYear the refYear to set
+     */
+    public void setRefYear(String refYear) {
+        this.refYear = refYear;
+    }
 }

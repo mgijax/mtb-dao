@@ -920,13 +920,13 @@ public class MTBSynchronizationUtilDAO extends MTBUtilDAO {
         }catch(Exception e){
             
             log.error("Cant create labels for marker key "+mKey,e);
-        }finally {
+        
             try{
                 mtbConn.rollback();
                 ps.close();
                 mtbConn.close();
-            }catch(Exception e){
-                log.error(e);
+            }catch(Exception f){
+                log.error(f);
             }
         }
         return success;

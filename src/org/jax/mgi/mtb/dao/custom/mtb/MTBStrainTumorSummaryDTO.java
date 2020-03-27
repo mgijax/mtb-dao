@@ -456,7 +456,7 @@ public class MTBStrainTumorSummaryDTO {
      * @param freq
      * @return
      */
-    private double freqToDouble(String freq) {
+    public static double freqToDouble(String freq) {
         double ret = -1.0;
 
         try {

@@ -6,7 +6,9 @@ package org.jax.mgi.mtb.dao.custom.mtb;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import org.jax.mgi.mtb.utils.StringUtils;
 
 /**
@@ -26,10 +28,11 @@ public class MTBTumorSummaryDTO {
     // tumor related information
     private String tumorName = null;
     private String organOfOrigin = null;
+    private String organAffected = null;
     private String tumorClassification = null;
-    private HashMap agents = null;
     private Map<String, String> tumorSynonyms = null;
     private String treatmentType = null;
+    private Collection<String> agents = null;
 
     // strain related information
     private long strainKey = -1;
@@ -39,7 +42,7 @@ public class MTBTumorSummaryDTO {
     private Collection strainSynonyms = null;
 
     // frequency records
-    private Collection frequencyRecs = null;
+    private Collection<MTBTumorFrequencySummaryDTO> frequencyRecs = null;
 
     // ----------------------------------------------------------- Constructors
     // none
@@ -63,6 +66,18 @@ public class MTBTumorSummaryDTO {
     public final void setOrganOfOrigin(String origin) {
         this.organOfOrigin = origin;
     }
+    
+    public final String getOrganAffected(){
+        return this.organAffected;
+    }
+    
+    public final void setOrganAffected(String organ){
+        this.organAffected = organ;
+    }
+    
+    public final Collection<String> getAgents(){
+        return this.agents;
+    }
 
     public final String getTumorClassification() {
         return this.tumorClassification;
@@ -70,14 +85,6 @@ public class MTBTumorSummaryDTO {
 
     public final void setTumorClassification(String classification) {
         this.tumorClassification = classification;
-    }
-
-    public final HashMap getAgents() {
-        return this.agents;
-    }
-
-    public final void setAgents(HashMap ags) {
-        this.agents = ags;
     }
 
     public final Map<String, String> getTumorSynonyms() {
@@ -156,8 +163,18 @@ public class MTBTumorSummaryDTO {
 
     public final void setFrequencyRecs(Collection recs) {
         this.frequencyRecs = recs;
+        setAgents();
     }
-
+    
+    private final void setAgents(){
+        Iterator it = this.frequencyRecs.iterator();
+        while(it.hasNext()){
+            MTBTumorFrequencySummaryDTO dto = (MTBTumorFrequencySummaryDTO)it.next();
+            if(dto.getIsParent()){
+                this.agents =  dto.getAgents().values();
+            }
+        }
+    }
 
     // ------------------------------------------------------ Protected Methods
     // none
