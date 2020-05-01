@@ -440,10 +440,12 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
                 sbNameSelect.append("select _Strain_key ").append(EOL);
                 sbNameSelect.append("  from StrainSynonyms ").append(EOL);
                 sbNameSelect.append(" where ").append(DAOUtils.formatCondition("name", strainParams.getStrainNameComparison(), strainParams.getStrainName(), "'"));
+                sbNameSelect.append(" or ").append(DAOUtils.formatCondition("replace(replace(replace(replace(name,'<sup>',''),'</sup>',''),'<i>',''),'</i>','')", strainParams.getStrainNameComparison(), strainParams.getStrainName(), "'"));
                 sbNameSelect.append(EOL).append(" union ").append(EOL);
                 sbNameSelect.append("select _Strain_key ").append(EOL);
                 sbNameSelect.append("  from Strain ").append(EOL);
                 sbNameSelect.append(" where ").append(DAOUtils.formatCondition("name", strainParams.getStrainNameComparison(), strainParams.getStrainName(), "'"));
+                sbNameSelect.append(" or ").append(DAOUtils.formatCondition("replace(replace(replace(replace(name,'<sup>',''),'</sup>',''),'<i>',''),'</i>','')", strainParams.getStrainNameComparison(), strainParams.getStrainName(), "'"));
 
                 
                 log.debug(sbNameSelect.toString());
