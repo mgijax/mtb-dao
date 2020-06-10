@@ -12,8 +12,11 @@ import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import org.apache.log4j.Logger;
 import org.jax.mgi.mtb.dao.DAOException;
 import org.jax.mgi.mtb.dao.custom.SearchResults;
@@ -25,12 +28,14 @@ import org.jax.mgi.mtb.dao.gen.mtb.MarkerDTO;
 import org.jax.mgi.mtb.dao.gen.mtb.ReferenceDAO;
 import org.jax.mgi.mtb.dao.gen.mtb.ReferenceDTO;
 import org.jax.mgi.mtb.dao.mtb.MTBUtilDAO;
+import static org.jax.mgi.mtb.dao.mtb.MTBUtilDAO.NONE;
 import org.jax.mgi.mtb.dao.utils.DAOUtils;
 import org.jax.mgi.mtb.utils.DataBean;
 import org.jax.mgi.mtb.utils.LabelValueBean;
 import org.jax.mgi.mtb.utils.LabelValueBeanComparator;
 import org.jax.mgi.mtb.utils.LabelValueDataBean;
 import org.jax.mgi.mtb.utils.StringUtils;
+import org.jax.mgi.mtb.utils.Timer;
 
 /**
  * A <code>MTBUtilDAO</code> which performs operations on <code>Reference</code>
@@ -117,6 +122,50 @@ public class MTBReferenceUtilDAO extends MTBUtilDAO {
             + " AND c._organism_key = o._organism_key "
             + " AND hmr._marker_key = m._marker_key "
             + " AND hmr._reference_key = ? order by symbol";
+    
+    private final static String SQL_ASSOCIATED_TUMORS =
+            "select tf._TumorFrequency_key, " +
+            "       coalesce((select _Parent_key from TumorProgression where _Child_key = tf._TumorFrequency_key and _TumorProgressionType_key = 1), tf._TumorFrequency_key) _Parent_key, " +
+            "       (select count(1) from TumorFrequencyTreatments where _TumorFrequency_key = tft._TumorFrequency_key) numAgents, " +
+            "       case when (select _Parent_key from TumorProgression where _Child_key = tf._TumorFrequency_key and _TumorProgressionType_key = 1) is null then 0 else 1 end metastasis, " +
+            "       (select count(1) from TumorPathologyAssoc a, PathologyImages pi, Images i where a._Pathology_key = pi._Pathology_key and  pi._images_key = i._images_key and i.privateFlag = 0 and a._TumorFrequency_key = tf._TumorFrequency_key) numImages, " +
+            "       oo._Organ_key organOriginKey, " +
+            "       oo.name organOriginName, " +
+            "       tc._TumorClassification_key, " +
+            "       tc.name tumorClassName, " +
+            "       oo.name || ' ' || tc.name tumorName, " +
+            "       s._Strain_key, " +
+            "       s.name strainName, " +
+            "       tf._Sex_key, " +
+            "       tf.incidence, " +
+            "       oa.name organAffectedName, " +
+            "       aty.name treatmentType, " +
+            "       a._Agent_key, " +
+            "       a.name agentName, " +
+            "       acc.accId " +
+            "   from TumorFrequency tf left join " +
+            "       ( TumorFrequencyTreatments tft join Agent a on ( tft._Agent_key = a._Agent_key ) " +
+			      "        join AgentType aty on ( a._AgentType_key = aty._AgentType_key )) " +
+            "        on ( tf._TumorFrequency_key = tft._TumorFrequency_key ), " +
+            "       TumorType tt, " +
+            "       TumorClassification tc, " +
+            "       Strain s, " +
+            "       Accession acc, " +
+            "       Organ oa, " +
+            "       Organ oo " +
+            " where tf._TumorType_key = tt._TumorType_key " +
+            "   and tt._TumorClassification_key = tc._TumorClassification_key " +
+            "   and tt._Organ_key = oo._Organ_key " +
+            "   and tf._Reference_key = acc._Object_key " +
+            "   and acc._SiteInfo_key = 1 " +
+            "   and acc._MTBTypes_key = 6 " +
+            "   and tf._Strain_key = s._Strain_key " +
+            "   and tf._OrganAffected_key = oa._Organ_key " +
+            "   and tf._Reference_key = ?" +
+            " order by metastasis, _Parent_key, oo.name, tc.name, oa.name";
+    
+    
+    
     // -------------------------------------------------------------- Constants
     public static final int ID_YEAR = 0;
     public static final int ID_FIRST_AUTHOR = 1;
@@ -358,6 +407,10 @@ public class MTBReferenceUtilDAO extends MTBUtilDAO {
             // retrieve the additional information in MTB
             reference.setAdditionalInfo(getAdditionalInfo(lKey));
             reference.setOtherAccessionIds(getAccessionIds(lKey));
+            
+            // for new UI
+            reference.setTumors(getAssociatedTumors(lKey));
+            
         } catch (Exception e) {
             log.error("Unable to retrive reference information", e);
         }
@@ -959,4 +1012,159 @@ public class MTBReferenceUtilDAO extends MTBUtilDAO {
 
         return results;
     }
+    
+    
+    
+     private List<MTBStrainTumorSummaryDTO> getAssociatedTumors(long lKey) {
+        boolean bSimple = false;
+        Timer timer = new Timer();
+        List<MTBStrainTumorDetailsDTO> listTumors = new ArrayList<MTBStrainTumorDetailsDTO>();
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            // get a connection, create a statement, and execute the query
+            conn = getConnection();
+            pstmt = conn.prepareStatement(SQL_ASSOCIATED_TUMORS);
+            pstmt.setLong(1, lKey);
+            rs = pstmt.executeQuery();
+
+            List<String> arrAgents = null;
+            List<String> agentKeys = null;
+            MTBStrainTumorDetailsDTO dtoPrevTumor = new MTBStrainTumorDetailsDTO();
+
+            // loop through the results
+            while (rs.next()) {
+                MTBStrainTumorDetailsDTO currentTumor = new MTBStrainTumorDetailsDTO();
+                currentTumor.setTumorFrequencyKey(rs.getInt(1));
+                currentTumor.setParentFrequencyKey(rs.getInt(2));
+                currentTumor.setMetastasis(rs.getInt(4) == 1);
+                currentTumor.setImages(rs.getInt(5));
+                currentTumor.setOrganOfOriginKey(rs.getInt(6));
+                currentTumor.setOrganOfOriginName(rs.getString(7));
+                currentTumor.setTumorClassKey(rs.getInt(8));
+                currentTumor.setTumorName(rs.getString(10));
+                currentTumor.setStrainKey(rs.getInt(11));
+                currentTumor.setStrainName(rs.getString(12));
+                currentTumor.setSex(rs.getString(13));
+                currentTumor.setFrequency(rs.getString(14));
+                currentTumor.setOrganAffectedName(rs.getString(15));
+                currentTumor.setTreatmentType(DAOUtils.nvl(rs.getString(16), NONE));
+                currentTumor.setRefAccId(rs.getString(19));
+                String agent = rs.getString(18);
+                String agentKey = rs.getString(17);
+
+                arrAgents = new ArrayList<String>();
+                agentKeys = new ArrayList<String>();
+
+                arrAgents.add(agent);
+                agentKeys.add(agentKey);
+
+                currentTumor.setAgents(arrAgents);
+                currentTumor.setAgentKeys(agentKeys);
+
+                if (dtoPrevTumor.getTumorFrequencyKey() == currentTumor.getTumorFrequencyKey()) {
+                    MTBStrainTumorDetailsDTO ts = listTumors.get(listTumors.size() - 1);
+
+                    Collection<String> c = ts.getAgents();
+                    Collection<String> c2 = ts.getAgentKeys();
+
+                    if (c == null) {
+                        c = new ArrayList<String>();
+                    }
+
+                    if (c2 == null) {
+                        c2 = new ArrayList<String>();
+                    }
+
+                    c.add(agent);
+                    c2.add(agentKey);
+
+                    ts.setAgents(c);
+                    ts.setAgentKeys(c2);
+
+                    listTumors.set(listTumors.size() - 1, ts);
+                } else {
+                    dtoPrevTumor = currentTumor;
+                    listTumors.add(currentTumor);
+                }
+            }
+        } catch (SQLException sqle) {
+            log.error("Error getting associated tumor information.", sqle);
+        } finally {
+            close(pstmt, rs);
+            freeConnection(conn);
+        }
+
+        
+        Map<String, MTBStrainTumorSummaryDTO> mapConsolidatedMetsTumors = consolidateMetastatsis(listTumors, bSimple);
+        Map<String, MTBStrainTumorSummaryDTO> mapConsolidatedTumors = consolidateTumors(mapConsolidatedMetsTumors, bSimple);
+        Collection<MTBStrainTumorSummaryDTO> colTumors = mapConsolidatedTumors.values();
+
+        MTBStrainTumorSummaryDTO tumorArrTemp[] = (MTBStrainTumorSummaryDTO [])colTumors.toArray(new MTBStrainTumorSummaryDTO[colTumors.size()]);
+        MTBStrainTumorSummaryDTO arrTumor[] = null;
+        arrTumor = new MTBStrainTumorSummaryDTO[tumorArrTemp.length];
+        System.arraycopy(tumorArrTemp, 0, arrTumor, 0, tumorArrTemp.length);
+
+        // sort the tumors
+        Arrays.sort(arrTumor, new MTBStrainTumorSummaryComparator(MTBTumorUtilDAO.ID_ORGAN));
+
+        
+        log.info("Getting associated tumors took: " + timer.toString());
+        
+
+        return new ArrayList<MTBStrainTumorSummaryDTO>(Arrays.asList(arrTumor));
+    }
+     
+     private Map<String, MTBStrainTumorSummaryDTO> consolidateMetastatsis(List<MTBStrainTumorDetailsDTO> t, boolean simple) {
+        Map<String, MTBStrainTumorSummaryDTO> mapTumors  = new LinkedHashMap<String, MTBStrainTumorSummaryDTO>();
+
+        for (MTBStrainTumorDetailsDTO detail : t) {
+            MTBStrainTumorSummaryDTO sumTemp = null;
+
+            StringBuffer key = new StringBuffer();
+            key.append(detail.getStrainKey());
+            key.append("::");
+  //          key.append(detail.getTumorName());
+            key.append("::");
+            key.append(detail.getTreatmentType());
+            key.append("::");
+            key.append(detail.getParentFrequencyKey());
+            key.append("::");
+
+            if (!simple) {
+                
+
+                if (detail.getAgents() == null) {
+                    key.append("NULL");
+                } else {
+                    key.append(detail.getAgents().toString());
+                }
+            }
+
+            if (mapTumors.containsKey(key.toString())) {
+                sumTemp = mapTumors.get(key.toString());
+                sumTemp.addTumorFrequencyKey(detail.getTumorFrequencyKey());
+
+             
+                if ("0".equalsIgnoreCase(detail.getFrequency())) {
+                    sumTemp.addMetastasizesTo("<i>not</i> " + detail.getOrganAffectedName());
+                } else {
+                    sumTemp.addMetastasizesTo(detail.getOrganAffectedName());
+                    sumTemp.addTFKeyWithFrequency(detail.getTumorFrequencyKey());
+                }
+
+                sumTemp.setImages(detail.getImageCount());
+                sumTemp.setMetastasis(detail.getMetastasis());
+            } else {
+                sumTemp = new MTBStrainTumorSummaryDTO(detail);
+            }
+
+            mapTumors.put(key.toString(), sumTemp);
+        }
+
+        return mapTumors;
+    }
+    
 }

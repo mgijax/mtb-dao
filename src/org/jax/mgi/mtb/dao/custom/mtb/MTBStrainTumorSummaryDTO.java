@@ -7,6 +7,7 @@ package org.jax.mgi.mtb.dao.custom.mtb;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,7 +54,8 @@ public class MTBStrainTumorSummaryDTO {
     private int frequencyKey = -1;
     private Collection<String> collectionAgents;
     private Collection<String> collectionStrainTypes;
-    private Collection<String> collectionReferences;
+    
+    private Map<String,Citation> citations;
     
     private static final Logger log =
             Logger.getLogger(MTBStrainTumorSummaryDTO.class.getName());
@@ -75,6 +77,7 @@ public class MTBStrainTumorSummaryDTO {
         freqMixed = new ArrayList<String>();
         freqUnknown = new ArrayList<String>();
         metastasizesTo = new ArrayList<String>();
+        citations = new HashMap<String,Citation>();
         refAccIds = new HashMap<String, String>();
         setImages(detail.getImageCount());
         setMetastasis(detail.getMetastasis());
@@ -86,8 +89,7 @@ public class MTBStrainTumorSummaryDTO {
 
         collectionAgents = detail.getAgentCollection();
         collectionStrainTypes = detail.getStrainTypeCollection();
-        collectionReferences = detail.getReferenceCollection();
-
+     
         add(detail);
 
         // override
@@ -158,6 +160,7 @@ public class MTBStrainTumorSummaryDTO {
         }
 
         refAccIds.put(detail.getRefAccId(), detail.getRefAccId());
+        citations.put(detail.getRefAccId(),new Citation(detail.getRefShortCitation(),detail.getRefAccId()));
 
         if ("M".equalsIgnoreCase(detail.getSex())) {
             freqMale.add(freq);
@@ -215,6 +218,7 @@ public class MTBStrainTumorSummaryDTO {
         freqMixed.addAll(sum.getFreqMixed());
         freqUnknown.addAll(sum.getFreqUnknown());
         refAccIds.putAll(sum.getRefAccIds());
+        citations.putAll(sum.citations);
         metastasizesTo.addAll(sum.getMetastasizesTo());
         setImages(sum.getImageCount());
     }
@@ -227,9 +231,7 @@ public class MTBStrainTumorSummaryDTO {
         return this.collectionStrainTypes;
     }
 
-    public Collection<String> getReferencesCollection() {
-        return this.collectionReferences;
-    }
+    
     
     public final String getFreqMaleString() {
         return getFrequencyString(freqMale);
@@ -265,8 +267,56 @@ public class MTBStrainTumorSummaryDTO {
         return getMax(getFrequencyString(freqUnknown));
     }
     
+    public final Double getMax(){
+        Double max = getMaxFreqMale();
+        Double test = getMaxFreqFemale();
+        if(max < test ){
+            max = test;
+        }
+        test = getMaxFreqMixed();
+        if(max < test ){
+            max = test;
+        }
+        
+        test = getMaxFreqUnknown();
+        if(max < test ){
+            max = test;
+        }
+        return max;
+        
+    }
+    
+    public final Double getMin(){
+        Double min = getMin(getFrequencyString(freqMale));
+        Double test = getMin(getFrequencyString(freqFemale));
+        if(min > test ){
+            min = test;
+        }
+        test = getMin(getFrequencyString(freqMixed));
+        if(min > test ){
+            min = test;
+        }
+        
+        test = getMin(getFrequencyString(freqUnknown));
+        if(min > test ){
+            min = test;
+        }
+        return min;
+        
+    }
+    
+    private final Double getMin(String freq){
+        if(freq == null) return 100d;
+        String[] parts = freq.split("-");
+        
+        return freqToDouble(parts[0].trim());
+        
+        
+    }
+    
+    
     private final Double getMax(String freq){
-        if(freq == null) return null;
+        if(freq == null) return -1d;
         String[] parts = freq.split("-");
         if(parts.length == 1){
             return freqToDouble(parts[0]);
@@ -408,6 +458,14 @@ public class MTBStrainTumorSummaryDTO {
     public void addMetastasizesTo(String organ) {
         this.metastasizesTo.add(organ);
     }
+    
+    public Collection<Citation> getCitations(){
+        ArrayList<Citation> values = new ArrayList<>();
+        
+        values.addAll(citations.values());
+        Collections.sort(values, new CitationCompare());
+        return values;
+    }
 
     public Collection<String> getSortedRefAccIds() {
         List<String> c = null;
@@ -497,9 +555,9 @@ public class MTBStrainTumorSummaryDTO {
     private String getFrequencyString(List<String> array) {
         try {
             double min = 1000.0;
-            String minStr = null;
+            String minStr = "";
             double max = -1000.0;
-            String maxStr = null;
+            String maxStr = "";
 
             if (array.size() == 0) {
                 return null;
@@ -629,10 +687,35 @@ public class MTBStrainTumorSummaryDTO {
             e.printStackTrace();
         }
 
-        return null;
+        return "0";
     }
     
+    public class Citation{
     
+        private String shortCitation;
+        private String accID;
+        
+        Citation(String shortCitation, String accID){
+            this.shortCitation = shortCitation;
+            this.accID = accID;
+        }
+        
+        public String getShortCitation(){
+            return shortCitation;
+        }
+        public String getAccID(){
+            return accID;
+        }
+    }
+    
+    class CitationCompare implements Comparator<Citation> {
+
+    public int compare(Citation a, Citation b) {
+
+        return a.getShortCitation().compareTo(b.getShortCitation());
+    }
+}
+
    
 }
 

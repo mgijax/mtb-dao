@@ -39,7 +39,7 @@ public class MTBStrainDetailDTO {
     private Collection<MTBStrainGeneticsDTO> genetics = null;
     private Collection<MTBStrainLinksDTO> links = null;
     private Collection<MTBStrainLinksDTO> linksGeneral = null;
-    private Collection<MTBStrainTumorSummaryDTO> tumors = null;;
+    private Collection<MTBStrainTumorSummaryDTO> tumors = null;
     private Collection<String> tumorIds = null;
 
     // ----------------------------------------------------------- Constructors

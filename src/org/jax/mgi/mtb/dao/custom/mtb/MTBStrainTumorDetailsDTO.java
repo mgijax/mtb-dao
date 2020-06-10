@@ -47,6 +47,7 @@ public class MTBStrainTumorDetailsDTO {
     private int parentFrequencyKey = -1;
     private boolean metastasis = false;
     private String refAccId = null;
+    private String refShortCitation = null;
     private Map<String, String> mapStrainTypes = null;
     private Map<String, String> mapAgents = null;
     private Map<String, String> mapAgentKeys = null;
@@ -289,7 +290,7 @@ public class MTBStrainTumorDetailsDTO {
         }
     }
 
-    public Collection<String> getReferenceCollection() {
+    public Collection<String> DontGetReferenceCollection() {
         if (mapReferences == null) {
             return new ArrayList<String>();
         } else {
@@ -321,7 +322,7 @@ public class MTBStrainTumorDetailsDTO {
         mapStrainTypes.put(strStrainType, strStrainType);
     }
 
-    public void addReference(String strRef) {
+    public void DontAddReference(String strRef) {
         if (mapReferences == null) {
             mapReferences = new HashMap<String, String>();
         }
@@ -360,6 +361,20 @@ public class MTBStrainTumorDetailsDTO {
         sb.append("<REF_ACC_ID>").append(refAccId).append("</REF_ACC_ID>").append(NL);
         sb.append("</TF>").append(NL);
         return sb.toString();
+    }
+
+    /**
+     * @return the refShortCitation
+     */
+    public String getRefShortCitation() {
+        return refShortCitation;
+    }
+
+    /**
+     * @param refShortCitation the refShortCitation to set
+     */
+    public void setRefShortCitation(String refShortCitation) {
+        this.refShortCitation = refShortCitation;
     }
 
    

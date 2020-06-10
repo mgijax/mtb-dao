@@ -5,6 +5,7 @@
 package org.jax.mgi.mtb.dao.custom.mtb;
 
 import java.text.DateFormat;
+import java.util.Collection;
 import java.util.List;
 import org.jax.mgi.mtb.dao.gen.mtb.ReferenceDAO;
 import org.jax.mgi.mtb.dao.gen.mtb.ReferenceDTO;
@@ -28,6 +29,7 @@ public class MTBReferenceDetailDTO {
     public ReferenceDTO referenceDTO = null;
     private List<LabelValueBean<String,Long>> additionalInfo = null;
     private List otherAccessionIds = null;
+    private Collection<MTBStrainTumorSummaryDTO> tumors = null;;
 
     // ----------------------------------------------------------- Constructors
 
@@ -205,4 +207,18 @@ public class MTBReferenceDetailDTO {
 
     // -------------------------------------------------------- Private Methods
     // none
+
+    /**
+     * @return the tumors
+     */
+    public Collection<MTBStrainTumorSummaryDTO> getTumors() {
+        return tumors;
+    }
+
+    /**
+     * @param tumors the tumors to set
+     */
+    public void setTumors(Collection<MTBStrainTumorSummaryDTO> tumors) {
+        this.tumors = tumors;
+    }
 }

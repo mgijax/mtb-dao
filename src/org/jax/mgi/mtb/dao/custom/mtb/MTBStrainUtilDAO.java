@@ -87,7 +87,8 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
             "       aty.name treatmentType, " +
             "       a._Agent_key, " +
             "       a.name agentName, " +
-            "       acc.accId " +
+            "       acc.accId, " +
+            "       rf.shortCitation " +
             "   from TumorFrequency tf left join " +
             "       ( TumorFrequencyTreatments tft join Agent a on ( tft._Agent_key = a._Agent_key ) " +
 			      "        join AgentType aty on ( a._AgentType_key = aty._AgentType_key )) " +
@@ -97,11 +98,13 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
             "       Strain s, " +
             "       Accession acc, " +
             "       Organ oa, " +
-            "       Organ oo " +
+            "       Organ oo, " +
+            "       Reference rf " +
             " where tf._TumorType_key = tt._TumorType_key " +
             "   and tt._TumorClassification_key = tc._TumorClassification_key " +
             "   and tt._Organ_key = oo._Organ_key " +
             "   and tf._Reference_key = acc._Object_key " +
+            "   and tf._Reference_key = rf._reference_key " +
             "   and acc._SiteInfo_key = 1 " +
             "   and acc._MTBTypes_key = 6 " +
             "   and tf._Strain_key = s._Strain_key " +
@@ -854,11 +857,13 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
                 currentTumor.setTumorClassKey(rs.getInt(8));
                 currentTumor.setTumorName(rs.getString(10));
                 currentTumor.setStrainKey(rs.getInt(11));
+                currentTumor.setStrainName(rs.getString(12));
                 currentTumor.setSex(rs.getString(13));
                 currentTumor.setFrequency(rs.getString(14));
                 currentTumor.setOrganAffectedName(rs.getString(15));
                 currentTumor.setTreatmentType(DAOUtils.nvl(rs.getString(16), NONE));
                 currentTumor.setRefAccId(rs.getString(19));
+                currentTumor.setRefShortCitation(rs.getString(20));
                 String agent = rs.getString(18);
                 String agentKey = rs.getString(17);
 
