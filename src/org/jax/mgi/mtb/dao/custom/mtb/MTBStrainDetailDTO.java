@@ -5,6 +5,7 @@
 package org.jax.mgi.mtb.dao.custom.mtb;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import org.jax.mgi.mtb.dao.gen.mtb.ReferenceDTO;
 import org.jax.mgi.mtb.dao.gen.mtb.StrainDAO;
@@ -37,6 +38,7 @@ public class MTBStrainDetailDTO {
     private Collection<StrainSynonymsDTO> synonyms = null;
     private Collection<ReferenceDTO> refs = null;
     private Collection<MTBStrainGeneticsDTO> genetics = null;
+    private Collection<MTBStrainGeneticsDTO> consolidatedGenetics = null;
     private Collection<MTBStrainLinksDTO> links = null;
     private Collection<MTBStrainLinksDTO> linksGeneral = null;
     private Collection<MTBStrainTumorSummaryDTO> tumors = null;
@@ -130,6 +132,22 @@ public class MTBStrainDetailDTO {
 
     public final void setGenetics(Collection<MTBStrainGeneticsDTO> strainGenetics) {
         this.genetics = strainGenetics;
+        consolidateGenetics();
+    }
+    
+    // duplicate genetics appear due to multiple references, for display consolidate these
+    private void consolidateGenetics(){
+        HashMap<String,MTBStrainGeneticsDTO> map = new HashMap<>();
+        Iterator i = this.genetics.iterator();
+        while(i.hasNext()){
+            MTBStrainGeneticsDTO dto = (MTBStrainGeneticsDTO) i.next();
+            map.put(dto.getMarkerId()+""+dto.getAllelePairId(),dto);
+        }
+        this.consolidatedGenetics = map.values();
+    }
+    
+    public final Collection<MTBStrainGeneticsDTO> getConsolidatedGenetics() {
+        return this.consolidatedGenetics;
     }
 
     public final Collection<MTBStrainGeneticsDTO> getGenetics() {

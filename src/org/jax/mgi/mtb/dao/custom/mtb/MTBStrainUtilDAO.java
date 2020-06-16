@@ -968,7 +968,7 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
                 dtoStrainGenetics.setOrganism(DAOUtils.nvl(rs.getString(2), ""));
                 dtoStrainGenetics.setMarkerSymbol(DAOUtils.nvl(rs.getString(4), ""));
                 dtoStrainGenetics.setMarkerName(DAOUtils.nvl(rs.getString(5), ""));
-                dtoStrainGenetics.setMarkerUrl(DAOUtils.nvl(rs.getString(12), ""));
+                dtoStrainGenetics.setMarkerUrl(DAOUtils.nvl(rs.getString(12), "").replace("reference", "marker"));
 
               
                  dtoStrainGenetics.setAllele1Id(rs.getInt(6));
@@ -979,7 +979,7 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
 
                 // NOTE: not supposed to link to any alleles that hava a
                 // '+' character in the name
-              String  strTemp = DAOUtils.nvl(rs.getString(13), "");
+              String  strTemp = DAOUtils.nvl(rs.getString(13), "").replace("reference","allele");
 
                 if (StringUtils.hasValue(strTemp)) {
                     String symb = dtoStrainGenetics.getAllele1Symbol();
@@ -997,7 +997,7 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
 
                 // NOTE: not supposed to link to any alleles that hava a
                 // '+' character in the name
-                strTemp = DAOUtils.nvl(rs.getString(14), "");
+                strTemp = DAOUtils.nvl(rs.getString(14), "").replace("reference","allele");
 
                 if (StringUtils.hasValue(strTemp)) {
                     String symb = dtoStrainGenetics.getAllele2Symbol();

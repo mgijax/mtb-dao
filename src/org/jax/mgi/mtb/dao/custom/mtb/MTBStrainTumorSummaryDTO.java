@@ -376,7 +376,12 @@ public class MTBStrainTumorSummaryDTO {
         return this.tumorOrganName;
     }
 
+    // TODO: this is a hack and should be fixed elsewhere
     public final void setAgents(Collection a) {
+        if(a != null && a.size()==1 && a.toArray()[0] == null){
+            a = new ArrayList<String>();
+           
+        }
         this.agents = a;
     }
 
