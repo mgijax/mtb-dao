@@ -181,6 +181,10 @@ public class MTBReferenceDetailDTO {
         return this.referenceDTO.getAbstractText();
     }
     
+    public String getShortCitation(){
+        return this.referenceDTO.getShortCitation();
+    }
+    
      public void setCodedByDate(String cBDate) {
         try {
             this.referenceDTO.setReferenceDate(DateFormat.getInstance().parse(cBDate));

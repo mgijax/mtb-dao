@@ -37,8 +37,9 @@ public class MTBStrainTumorSummaryDTO {
     private int tumorClassificationKey = -1;
     private int organOfOriginKey = -1;
     private Collection agentKeys = null;
-    private Collection agents;
+    
     private int images = 0;
+    private int cytoImages = 0;
     private boolean metastasis = false;
     private String treatmentType;
     private String organAffectedName;
@@ -52,7 +53,7 @@ public class MTBStrainTumorSummaryDTO {
     private Map<String, String> refAccIds;
     private int parentFrequencyKey = -1;
     private int frequencyKey = -1;
-    private Collection<String> collectionAgents;
+    private Collection<String> collectionAgents = new ArrayList<String>();
     private Collection<String> collectionStrainTypes;
     
     private Map<String,Citation> citations;
@@ -66,7 +67,6 @@ public class MTBStrainTumorSummaryDTO {
         setTumorName(detail.getTumorName());
         setTumorClassName(detail.getTumorClassName());
         setTumorOrganName(detail.getOrganOfOriginName());
-        setAgents(detail.getAgents());
         setTreatmentType(detail.getTreatmentType());
         setOrganAffectedName(detail.getOrganAffectedName());
         setParentFrequencyKey(detail.getParentFrequencyKey());
@@ -79,7 +79,8 @@ public class MTBStrainTumorSummaryDTO {
         metastasizesTo = new ArrayList<String>();
         citations = new HashMap<String,Citation>();
         refAccIds = new HashMap<String, String>();
-        setImages(detail.getImageCount());
+      //  setImages(detail.getImageCount());
+      //  setCytoImages(detail.getCytoImages());
         setMetastasis(detail.getMetastasis());
         setAgentKeys(detail.getAgentKeys());
         setStrainKey(detail.getStrainKey());
@@ -87,7 +88,7 @@ public class MTBStrainTumorSummaryDTO {
         setTumorClassificationKey(detail.getTumorClassKey());
         setOrganOfOriginKey(detail.getOrganOfOriginKey());
 
-        collectionAgents = detail.getAgentCollection();
+        
         collectionStrainTypes = detail.getStrainTypeCollection();
      
         add(detail);
@@ -101,7 +102,6 @@ public class MTBStrainTumorSummaryDTO {
     }
     
     public static void main(String[] args){
-        System.out.println("test");
     }
 
     // --------------------------------------------------------- Public Methods
@@ -173,6 +173,7 @@ public class MTBStrainTumorSummaryDTO {
         }
 
         setImages(detail.getImageCount());
+        setCytoImages(detail.getCytoImages());
         setMetastasis(detail.getMetastasis());
 
         if (this.frequencyKey == -1) {
@@ -180,6 +181,8 @@ public class MTBStrainTumorSummaryDTO {
         } else {
             setFrequencyKey(-1);
         }
+        
+         setAgents(detail.getAgentCollection());
     }
 
     public final Collection<String> getAllTFKeys() {
@@ -220,7 +223,9 @@ public class MTBStrainTumorSummaryDTO {
         refAccIds.putAll(sum.getRefAccIds());
         citations.putAll(sum.citations);
         metastasizesTo.addAll(sum.getMetastasizesTo());
+        setAgents(sum.collectionAgents);
         setImages(sum.getImageCount());
+        setCytoImages(sum.getCytoImages());
     }
     
    public Collection<String> getAgentsCollection() {
@@ -377,16 +382,29 @@ public class MTBStrainTumorSummaryDTO {
     }
 
     // TODO: this is a hack and should be fixed elsewhere
-    public final void setAgents(Collection a) {
-        if(a != null && a.size()==1 && a.toArray()[0] == null){
-            a = new ArrayList<String>();
+    public final void setAgents(Collection<String> a) {
+        
+        if(a == null) return;
+        if( a.size()==1 && a.toArray()[0] == null){
+           return;
            
         }
-        this.agents = a;
+        try{            
+            for(String agent : a){
+                if(!this.collectionAgents.contains(agent)){
+                    this.collectionAgents.add(agent);
+                }
+                    
+            }
+        
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+        
     }
 
     public final Collection getAgents() {
-        return this.agents;
+        return this.collectionAgents;
     }
 
     public final void setImages(int images) {
@@ -396,6 +414,16 @@ public class MTBStrainTumorSummaryDTO {
             this.images = images;
         }else{ 
             this.images = this.images + images;
+        }
+    }
+    
+    public final void setCytoImages(int images) {
+        // one detail rec having images is enough to set the images to true
+        //if (this.images == false) {
+        if (this.cytoImages == 0) {
+            this.cytoImages = images;
+        }else{ 
+            this.cytoImages = this.cytoImages + images;
         }
     }
 
@@ -694,6 +722,15 @@ public class MTBStrainTumorSummaryDTO {
 
         return "0";
     }
+
+    /**
+     * @return the cytoImages
+     */
+    public int getCytoImages() {
+        return cytoImages;
+    }
+
+    
     
     public class Citation{
     

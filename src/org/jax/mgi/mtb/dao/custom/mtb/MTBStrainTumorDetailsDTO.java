@@ -42,6 +42,7 @@ public class MTBStrainTumorDetailsDTO {
     private String sex;
     private String frequency;
     private int images = 0;
+    private int cytoImages = 0;
     private String treatmentType;
     private String organAffectedName;
     private int parentFrequencyKey = -1;
@@ -278,7 +279,8 @@ public class MTBStrainTumorDetailsDTO {
         if (mapAgents == null) {
             return new ArrayList<String>();
         } else {
-            return new ArrayList<String>(mapAgents.keySet());
+            return  mapAgents.values();
+            
         }
     }
 
@@ -375,6 +377,20 @@ public class MTBStrainTumorDetailsDTO {
      */
     public void setRefShortCitation(String refShortCitation) {
         this.refShortCitation = refShortCitation;
+    }
+
+    /**
+     * @return the cytoImages
+     */
+    public int getCytoImages() {
+        return cytoImages;
+    }
+
+    /**
+     * @param cytoImages the cytoImages to set
+     */
+    public void setCytoImages(int cytoImages) {
+        this.cytoImages = cytoImages;
     }
 
    

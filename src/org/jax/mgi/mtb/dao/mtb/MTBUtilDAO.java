@@ -102,7 +102,7 @@ public class MTBUtilDAO {
                         
             if (!simple) {
                 key.append(delim);
-                if(sum .getAgentsCollection()!= null){
+                if(sum.getAgentsCollection()!= null){
                 key.append(sum.getAgentsCollection().toString());
                 }
                 if(sum.getAgentKeys() != null){
@@ -112,6 +112,8 @@ public class MTBUtilDAO {
             }
 
             MTBStrainTumorSummaryDTO summary = null;
+            
+         
 
             if (tumors.containsKey(key.toString())) {
                 summary = tumors.get(key.toString());
@@ -148,6 +150,8 @@ public class MTBUtilDAO {
             } else {
                 key.append(detail.getAgentCollection().toString());
             }
+            
+           
 
             if (tempTumors.containsKey(key.toString())) {
                 sumTemp = tempTumors.get(key.toString());

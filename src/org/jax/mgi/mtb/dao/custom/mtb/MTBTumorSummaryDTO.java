@@ -4,11 +4,11 @@
  */
 package org.jax.mgi.mtb.dao.custom.mtb;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
 import org.jax.mgi.mtb.utils.StringUtils;
 
 /**
@@ -181,4 +181,6 @@ public class MTBTumorSummaryDTO {
 
     // -------------------------------------------------------- Private Methods
     // none
+
+   
 }

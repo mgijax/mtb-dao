@@ -88,7 +88,8 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
             "       a._Agent_key, " +
             "       a.name agentName, " +
             "       acc.accId, " +
-            "       rf.shortCitation " +
+            "       rf.shortCitation, " +
+            "       (select count(1)  from AssayImages ai, TmrGntcCngAssayImageAssoc tgca, TumorGeneticChanges tgc where tgc._TumorGeneticChanges_key = tgca._TumorGeneticChanges_key and ai._assayimages_key = tgca._assayimages_key and ai.privateFlag !=1 and tgc._tumorfrequency_key = tf._tumorfrequency_key) cytoImages " +
             "   from TumorFrequency tf left join " +
             "       ( TumorFrequencyTreatments tft join Agent a on ( tft._Agent_key = a._Agent_key ) " +
 			      "        join AgentType aty on ( a._AgentType_key = aty._AgentType_key )) " +
@@ -110,7 +111,7 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
             "   and tf._Strain_key = s._Strain_key " +
             "   and tf._OrganAffected_key = oa._Organ_key " +
             "   and tf._Strain_key = ?" +
-            " order by metastasis, _Parent_key, oo.name, tc.name, oa.name";
+            " order by metastasis, _Parent_key, oo.name, tc.name, oa.name, _tumorfrequency_key, treatmenttype";
 
     private final static String SQL_STRAIN_REFERENCES =
             "select r._Reference_key, r.shortCitation, a.accId " +
@@ -841,8 +842,7 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
             pstmt.setLong(1, lKey);
             rs = pstmt.executeQuery();
 
-            List<String> arrAgents = null;
-            List<String> agentKeys = null;
+           
             MTBStrainTumorDetailsDTO dtoPrevTumor = new MTBStrainTumorDetailsDTO();
 
             // loop through the results
@@ -864,41 +864,26 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
                 currentTumor.setTreatmentType(DAOUtils.nvl(rs.getString(16), NONE));
                 currentTumor.setRefAccId(rs.getString(19));
                 currentTumor.setRefShortCitation(rs.getString(20));
-                String agent = rs.getString(18);
-                String agentKey = rs.getString(17);
-
-                arrAgents = new ArrayList<String>();
-                agentKeys = new ArrayList<String>();
-
-                arrAgents.add(agent);
-                agentKeys.add(agentKey);
-
-                currentTumor.setAgents(arrAgents);
-                currentTumor.setAgentKeys(agentKeys);
-
+                currentTumor.setCytoImages(rs.getInt(21));
+               
+               
+                
                 if (dtoPrevTumor.getTumorFrequencyKey() == currentTumor.getTumorFrequencyKey()) {
                     MTBStrainTumorDetailsDTO ts = listTumors.get(listTumors.size() - 1);
-
-                    Collection<String> c = ts.getAgents();
-                    Collection<String> c2 = ts.getAgentKeys();
-
-                    if (c == null) {
-                        c = new ArrayList<String>();
+                    ts.addAgentKey(rs.getString(17));
+                    ts.addAgent(rs.getString(18));
+                    
+                    
+                    if(ts.getTreatmentType().indexOf(currentTumor.getTreatmentType()) == -1){
+                      ts.setTreatmentType(ts.getTreatmentType()+", "+currentTumor.getTreatmentType());
                     }
-
-                    if (c2 == null) {
-                        c2 = new ArrayList<String>();
-                    }
-
-                    c.add(agent);
-                    c2.add(agentKey);
-
-                    ts.setAgents(c);
-                    ts.setAgentKeys(c2);
 
                     listTumors.set(listTumors.size() - 1, ts);
                 } else {
                     dtoPrevTumor = currentTumor;
+                    currentTumor.addAgentKey(rs.getString(17));
+                    currentTumor.addAgent(rs.getString(18));
+                    
                     listTumors.add(currentTumor);
                 }
             }
@@ -910,8 +895,8 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
         }
 
         
-        Map<String, MTBStrainTumorSummaryDTO> mapConsolidatedMetsTumors = consolidateMetastatsis(listTumors, bSimple);
-        Map<String, MTBStrainTumorSummaryDTO> mapConsolidatedTumors = consolidateTumors(mapConsolidatedMetsTumors, bSimple);
+        Map<String, MTBStrainTumorSummaryDTO> mapConsolidatedMetsTumors = consolidateMetastatsis(listTumors);
+        Map<String, MTBStrainTumorSummaryDTO> mapConsolidatedTumors = consolidateTumors(mapConsolidatedMetsTumors);
         Collection<MTBStrainTumorSummaryDTO> colTumors = mapConsolidatedTumors.values();
 
         MTBStrainTumorSummaryDTO tumorArrTemp[] = (MTBStrainTumorSummaryDTO [])colTumors.toArray(new MTBStrainTumorSummaryDTO[colTumors.size()]);
@@ -1097,7 +1082,7 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
         return hashMap;
     }
         
-      private Map<String, MTBStrainTumorSummaryDTO> consolidateMetastatsis(List<MTBStrainTumorDetailsDTO> t, boolean simple) {
+      private Map<String, MTBStrainTumorSummaryDTO> dontConsolidateMetastatsis(List<MTBStrainTumorDetailsDTO> t, boolean simple) {
         Map<String, MTBStrainTumorSummaryDTO> mapTumors  = new LinkedHashMap<String, MTBStrainTumorSummaryDTO>();
 
         for (MTBStrainTumorDetailsDTO detail : t) {
@@ -1136,6 +1121,7 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
                 }
 
                 sumTemp.setImages(detail.getImageCount());
+                sumTemp.setCytoImages(detail.getCytoImages());
                 sumTemp.setMetastasis(detail.getMetastasis());
             } else {
                 sumTemp = new MTBStrainTumorSummaryDTO(detail);

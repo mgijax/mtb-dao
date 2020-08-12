@@ -1016,7 +1016,7 @@ public class MTBReferenceUtilDAO extends MTBUtilDAO {
     
     
      private List<MTBStrainTumorSummaryDTO> getAssociatedTumors(long lKey) {
-        boolean bSimple = false;
+       
         Timer timer = new Timer();
         List<MTBStrainTumorDetailsDTO> listTumors = new ArrayList<MTBStrainTumorDetailsDTO>();
         Connection conn = null;
@@ -1030,8 +1030,7 @@ public class MTBReferenceUtilDAO extends MTBUtilDAO {
             pstmt.setLong(1, lKey);
             rs = pstmt.executeQuery();
 
-            List<String> arrAgents = null;
-            List<String> agentKeys = null;
+          
             MTBStrainTumorDetailsDTO dtoPrevTumor = new MTBStrainTumorDetailsDTO();
 
             // loop through the results
@@ -1052,41 +1051,24 @@ public class MTBReferenceUtilDAO extends MTBUtilDAO {
                 currentTumor.setOrganAffectedName(rs.getString(15));
                 currentTumor.setTreatmentType(DAOUtils.nvl(rs.getString(16), NONE));
                 currentTumor.setRefAccId(rs.getString(19));
-                String agent = rs.getString(18);
-                String agentKey = rs.getString(17);
-
-                arrAgents = new ArrayList<String>();
-                agentKeys = new ArrayList<String>();
-
-                arrAgents.add(agent);
-                agentKeys.add(agentKey);
-
-                currentTumor.setAgents(arrAgents);
-                currentTumor.setAgentKeys(agentKeys);
+                
 
                 if (dtoPrevTumor.getTumorFrequencyKey() == currentTumor.getTumorFrequencyKey()) {
                     MTBStrainTumorDetailsDTO ts = listTumors.get(listTumors.size() - 1);
 
-                    Collection<String> c = ts.getAgents();
-                    Collection<String> c2 = ts.getAgentKeys();
-
-                    if (c == null) {
-                        c = new ArrayList<String>();
+                   ts.addAgentKey(rs.getString(17));
+                   ts.addAgent(rs.getString(18));
+                    
+                    if(ts.getTreatmentType().indexOf(currentTumor.getTreatmentType()) == -1){
+                      ts.setTreatmentType(ts.getTreatmentType()+", "+currentTumor.getTreatmentType());
                     }
-
-                    if (c2 == null) {
-                        c2 = new ArrayList<String>();
-                    }
-
-                    c.add(agent);
-                    c2.add(agentKey);
-
-                    ts.setAgents(c);
-                    ts.setAgentKeys(c2);
 
                     listTumors.set(listTumors.size() - 1, ts);
                 } else {
                     dtoPrevTumor = currentTumor;
+                    currentTumor.addAgentKey(rs.getString(17));
+                    currentTumor.addAgent(rs.getString(18));
+                    
                     listTumors.add(currentTumor);
                 }
             }
@@ -1098,8 +1080,8 @@ public class MTBReferenceUtilDAO extends MTBUtilDAO {
         }
 
         
-        Map<String, MTBStrainTumorSummaryDTO> mapConsolidatedMetsTumors = consolidateMetastatsis(listTumors, bSimple);
-        Map<String, MTBStrainTumorSummaryDTO> mapConsolidatedTumors = consolidateTumors(mapConsolidatedMetsTumors, bSimple);
+        Map<String, MTBStrainTumorSummaryDTO> mapConsolidatedMetsTumors = consolidateMetastatsis(listTumors);
+        Map<String, MTBStrainTumorSummaryDTO> mapConsolidatedTumors = consolidateTumors(mapConsolidatedMetsTumors);
         Collection<MTBStrainTumorSummaryDTO> colTumors = mapConsolidatedTumors.values();
 
         MTBStrainTumorSummaryDTO tumorArrTemp[] = (MTBStrainTumorSummaryDTO [])colTumors.toArray(new MTBStrainTumorSummaryDTO[colTumors.size()]);

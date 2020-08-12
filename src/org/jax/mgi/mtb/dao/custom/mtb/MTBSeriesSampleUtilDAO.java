@@ -125,12 +125,24 @@ public class MTBSeriesSampleUtilDAO extends MTBUtilDAO {
 
         return detail;
     }
+    
+    
+    // need a query like this to populate each tumorFreqRec in tumorSummaryResults to link to gse or whereever need SiteInfo links as part of this
+//    select distinct se.id from Sample sp left join (Series se left join SeriesSampleAssoc ssa on (se._series_key = ssa._series_key )) on (ssa._sample_key = sp._sample_key),
+//    SampleAssoc sa
+//    where sp._sample_key = sa._sample_key
+//    and sa._mtbtypes_key = 5
+//    and sa._object_key = 
+    
+    
+    
     // does not search using SampleAssoc to objects other than tumorfrequency
     // does not deal with samples w/o series
 
     public ArrayList<MTBSeriesSampleSearchDTO> searchSeries(List<String> tumorClassifications,
             List<String> organs, List<String> platforms,
             String strain, String strainComp, String tfKey, String seriesId) {
+
 
         ArrayList<MTBSeriesSampleSearchDTO> results = new ArrayList<MTBSeriesSampleSearchDTO>();
 
@@ -752,7 +764,6 @@ public class MTBSeriesSampleUtilDAO extends MTBUtilDAO {
             ArrayList<String> colNames = new ArrayList<String>(columns);
             for (int i = 1; i <= columns; i++) {
                colNames.add(rs.getMetaData().getColumnLabel(i)); 
-               System.out.println(rs.getMetaData().getColumnLabel(i));
             }
             data.add(colNames);
             while(rs.next()){

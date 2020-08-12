@@ -50,6 +50,7 @@ public class MTBTumorFrequencySummaryDTO {
     private boolean isParent = false;
     private String shortCitation = null;
     private String refYear = null;
+    private Double incidence;
 
     // ----------------------------------------------------------- Constructors
     // none
@@ -285,5 +286,19 @@ public class MTBTumorFrequencySummaryDTO {
      */
     public void setRefYear(String refYear) {
         this.refYear = refYear;
+    }
+
+    /**
+     * @return the incidence
+     */
+    public Double getIncidence() {
+        return incidence;
+    }
+
+    /**
+     * @param incidence the incidence to set
+     */
+    public void setIncidence(Double incidence) {
+        this.incidence = incidence;
     }
 }
