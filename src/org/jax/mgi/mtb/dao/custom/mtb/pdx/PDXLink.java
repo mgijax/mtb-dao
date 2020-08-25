@@ -14,6 +14,7 @@ public class PDXLink extends PDXContent {
     private String description;
     private String url;
     private String linkText;
+    private String pubMedID;
   
     /**
      * @return the description
@@ -55,6 +56,20 @@ public class PDXLink extends PDXContent {
      */
     public void setLinkText(String linkText) {
         this.linkText = linkText.replaceAll("'", "&apos;").replaceAll("\"","&apos;");
+    }
+
+    /**
+     * @return the pubMedID
+     */
+    public String getPubMedID() {
+        return pubMedID;
+    }
+
+    /**
+     * @param pubMedID the pubMedID to set
+     */
+    public void setPubMedID(String pubMedID) {
+        this.pubMedID = pubMedID;
     }
 
  

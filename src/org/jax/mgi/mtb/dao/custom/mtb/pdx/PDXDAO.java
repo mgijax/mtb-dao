@@ -192,15 +192,16 @@ public class PDXDAO {
         try {
             Connection con = getConnection();
             PreparedStatement s = con.prepareStatement("insert into pdxlink "
-                    + "(modelid, _pdxcharacterization_key, description, url, linktext, "
-                    + "create_user, update_user, create_date, update_date) values (?,?,?,?,?,?,?, now(),now())");
+                    + "(modelid, _pdxcharacterization_key, description, url, linktext, pubmedid, "
+                    + "create_user, update_user, create_date, update_date) values (?,?,?,?,?,?,?,?, now(),now())");
             s.setString(1, link.getModelID());
             s.setInt(2, link.getCharacterization());
             s.setString(3, link.getDescription());
             s.setString(4, link.getUrl());
             s.setString(5, link.getLinkText());
-            s.setString(6, link.getUser());
+            s.setString(6, link.getPubMedID());
             s.setString(7, link.getUser());
+            s.setString(8, link.getUser());
             s.executeUpdate();
             s.close();
             con.close();
@@ -215,13 +216,14 @@ public class PDXDAO {
         try {
             Connection con = getConnection();
             PreparedStatement s = con.prepareStatement("update pdxlink "
-                    + "set description =?, url =? , linktext =?, "
+                    + "set description =?, url =? , linktext =?, pubmedid = ?, "
                     + "update_user =?, update_date = now() where _pdxlink_key  =?");
             s.setString(1, link.getDescription());
             s.setString(2, link.getUrl());
             s.setString(3, link.getLinkText());
-            s.setString(4, link.getUser());
-            s.setInt(5, link.getContentKey());
+            s.setString(4, link.getPubMedID());
+            s.setString(5, link.getUser());
+            s.setInt(6, link.getContentKey());
             s.executeUpdate();
             s.close();
             con.close();
@@ -550,7 +552,7 @@ public class PDXDAO {
         ResultSet rs = null;
         try {
             con = getConnection();
-            s = con.prepareStatement("Select _pdxlink_key, _pdxcharacterization_key, description, url, linktext, modelid from pdxlink where _pdxlink_key = ?");
+            s = con.prepareStatement("Select _pdxlink_key, _pdxcharacterization_key, description, url, linktext, pubmedid, modelid from pdxlink where _pdxlink_key = ?");
             s.setInt(1, key);
             rs = s.executeQuery();
             while (rs.next()) {
@@ -560,7 +562,8 @@ public class PDXDAO {
                 link.setDescription(rs.getString(3));
                 link.setUrl(rs.getString(4));
                 link.setLinkText(rs.getString(5));
-                link.setModelID(rs.getString(6));
+                link.setPubMedID(rs.getString(6));
+                link.setModelID(rs.getString(7));
 
             }
 
