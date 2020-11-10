@@ -1169,100 +1169,7 @@ public class MTBTumorUtilDAO extends MTBUtilDAO {
         return listOrgans;
     }
 
-    /**
-     * Returns MTBTumorFrequencySummaryDTOs with the same
-     * strain, tumorclassification and treatments as the given record
-     * the first SummaryDTO in the collection is for the given record 
-     * @param tumorFrequencyKey the key of the TF to use as search criteria
-     * @return MTBTumorSummaryDTO a wrapper class for a group of similar TF records
-     */
-    public MTBTumorSummaryDTO getTumorSumaryByExample(String tumorFrequencyKey) {
-
-        MTBTumorSummaryDTO tumor = new MTBTumorSummaryDTO();
-
-        Connection conn = null;
-        Statement stmt = null;
-        ResultSet rs = null;
-
-        try {
-            long tfKey = Long.parseLong(tumorFrequencyKey);
-            ArrayList<String> tfKeyList = new ArrayList<String>();
-
-            TumorFrequencyDTO tfDTO = TumorFrequencyDAO.getInstance().loadByPrimaryKey(tfKey);
-            long strain = tfDTO.getStrainKey().longValue();
-            TumorTypeDTO ttDTO = TumorTypeDAO.getInstance().loadByPrimaryKey(tfDTO.getTumorTypeKey());
-
-            String sql =
-                    "select distinct tf._tumorfrequency_key "
-                    + "from TumorFrequency tf, TumorFrequency tf2, TumorFrequencyTreatments tft, TumorFrequencyTreatments tft2 "
-                    + "where tf._strain_key = tf2._strain_key "
-                    + "and tf._tumortype_key = tf2._tumortype_key "
-                    + "and tf._tumorfrequency_key = tft._tumorfrequency_key "
-                    + "and tft._agent_key = tft2._agent_key "
-                    + "and tft2._tumorfrequency_key = tf2._tumorfrequency_key "
-                    + "and tf2._tumorfrequency_key = " + tfKey;
-
-            conn = getConnection();
-            stmt = conn.createStatement();
-            rs = stmt.executeQuery(sql);
-
-            while (rs.next()) {
-                tfKeyList.add(rs.getString(1));
-            }
-
-            // above query will have no results if there are no treatments
-            // so use a different query
-            if (tfKeyList.size() == 0) {
-                sql = " select tab.tfKey from (select distinct tf._tumorfrequency_key tfKey, tft._tumorfrequency_key tftKey "
-                        + " from TumorFrequency tf left join TumorFrequencyTreatments tft "
-                        + " on (tf._tumorfrequency_key = tft._tumorfrequency_key), "
-                        + " TumorFrequency tf2 "
-                        + " where tf._strain_key = tf2._strain_key "
-                        + " and tf._tumortype_key = tf2._tumortype_key "
-                        + " and tf2._tumorfrequency_key = " + tfKey + ") tab "
-                        + " where tab.tftKey is null";
-
-                rs = stmt.executeQuery(sql);
-
-                while (rs.next()) {
-                    tfKeyList.add(rs.getString(1));
-                }
-
-            }
-
-            long[] tfKeys = new long[tfKeyList.size()];
-            for (int i = 0; i < tfKeyList.size(); i++) {
-                tfKeys[i] = Long.parseLong(tfKeyList.get(i));
-            }
-
-            tumor = getTumorSummary(strain, ttDTO.getOrganKey().longValue(), tfKeys);
-
-            // put the example dto at the start of the collection so it can be
-            // displayed seperately
-            ArrayList<MTBTumorFrequencySummaryDTO> recs = (ArrayList<MTBTumorFrequencySummaryDTO>) tumor.getFrequencyRecs();
-            ArrayList<MTBTumorFrequencySummaryDTO> recs2 = new ArrayList<MTBTumorFrequencySummaryDTO>();
-            loop:
-            for (MTBTumorFrequencySummaryDTO tfsDTO : recs) {
-
-                if (tfsDTO.getTumorFrequencyKey() == tfKey) {
-                    recs2.add(tfsDTO);
-                    break loop;
-                }
-            }
-            recs.remove(recs2.get(0));
-            recs2.addAll(recs);
-            tumor.setFrequencyRecs(recs2);
-
-
-        } catch (SQLException sqle) {
-            log.error(sqle);
-        } finally {
-            close(stmt, rs);
-            freeConnection(conn);
-        }
-
-        return tumor;
-    }
+   
 
     public MTBTumorSummaryDTO getTumorSumary(long[] tumorFrequencyKeys) {
 
@@ -2732,6 +2639,32 @@ public class MTBTumorUtilDAO extends MTBUtilDAO {
         return tumorNotes;
     }
 
+    
+     public int getTumorFrequencyCount() {
+       
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        int count =0;
+        try {
+            // get a connection, create a statement, prepare it, and execute it
+            conn = getConnection();
+            pstmt = conn.prepareStatement("Select count(*) from tumorfrequency");
+            rs = pstmt.executeQuery();
+            rs.next();
+            count = rs.getInt(1);
+            
+        } catch (SQLException sqle) {
+            log.error("Error counting tumor frequencies", sqle);
+        } finally {
+            close(pstmt, rs);
+            freeConnection(conn);
+        }
+
+        return count;
+    }
+    
     /**
      * Remove synonyms with duplicate names
      * @param list<StrainSynonymsDTO> a list of possibly duplicated synonyms

@@ -404,7 +404,7 @@ public class PDXDAO {
         ResultSet rs = null;
         try {
             con = getConnection();
-            s = con.prepareStatement("Select _pdxlink_key, _pdxcharacterization_key, description, url, linktext from pdxlink where modelid = ?");
+            s = con.prepareStatement("Select _pdxlink_key, _pdxcharacterization_key, description, url, linktext, pubmedid from pdxlink where modelid = ?");
             s.setString(1, id);
             rs = s.executeQuery();
             while (rs.next()) {
@@ -414,6 +414,7 @@ public class PDXDAO {
                 link.setDescription(rs.getString(3));
                 link.setUrl(rs.getString(4));
                 link.setLinkText(rs.getString(5));
+                link.setPubMedID(rs.getString(6));
                 link.setModelID(id);
                 links.add(link);
             }
@@ -637,53 +638,6 @@ public class PDXDAO {
         }
 
         return contents;
-
-    }
-
-   
-   
-
-   
-    
-    public ArrayList<String> getModelsByAdditionalInfo(String key) {
-
-        StringBuffer query = new StringBuffer("select distinct pdx.modelId from ( ");
-        query.append(" select modelId from pdxcomment where _pdxcharacterization_key = ").append(key);
-        query.append(" union");
-        query.append(" select modelId from pdxdocument where _pdxcharacterization_key = ").append(key);
-        query.append(" union");
-        query.append(" select modelId from pdxdocument where _pdxcharacterization_key = ").append(key);
-        query.append(" union");
-        query.append(" select modelId from pdxgraphic where _pdxcharacterization_key = ").append(key);
-        query.append(" union");
-        query.append(" select modelId from pdxlink where _pdxcharacterization_key = ").append(key);
-        query.append(" as pdx");
-
-        Connection con = null;
-        PreparedStatement s = null;
-        ResultSet rs = null;
-        ArrayList<String> results = new ArrayList<String>();
-        try {
-            con = getConnection();
-            s = con.prepareStatement(query.toString());
-            rs = s.executeQuery();
-            while (rs.next()) {
-                results.add(rs.getString(1));
-            }
-        } catch (Exception e) {
-            log.error(e);
-        } finally {
-            try {
-                rs.close();
-                s.close();
-                con.close();
-
-            } catch (Exception e) {
-                log.error(e);
-            }
-        }
-
-        return results;
 
     }
 

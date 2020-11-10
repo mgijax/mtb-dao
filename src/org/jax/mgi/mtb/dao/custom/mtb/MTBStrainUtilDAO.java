@@ -1082,56 +1082,7 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
         return hashMap;
     }
         
-      private Map<String, MTBStrainTumorSummaryDTO> dontConsolidateMetastatsis(List<MTBStrainTumorDetailsDTO> t, boolean simple) {
-        Map<String, MTBStrainTumorSummaryDTO> mapTumors  = new LinkedHashMap<String, MTBStrainTumorSummaryDTO>();
-
-        for (MTBStrainTumorDetailsDTO detail : t) {
-            MTBStrainTumorSummaryDTO sumTemp = null;
-
-            StringBuffer key = new StringBuffer();
-            key.append(detail.getStrainKey());
-            key.append("::");
-  //          key.append(detail.getTumorName());
-            key.append("::");
-            key.append(detail.getTreatmentType());
-            key.append("::");
-            key.append(detail.getParentFrequencyKey());
-            key.append("::");
-
-            if (!simple) {
-                
-
-                if (detail.getAgents() == null) {
-                    key.append("NULL");
-                } else {
-                    key.append(detail.getAgents().toString());
-                }
-            }
-
-            if (mapTumors.containsKey(key.toString())) {
-                sumTemp = mapTumors.get(key.toString());
-                sumTemp.addTumorFrequencyKey(detail.getTumorFrequencyKey());
-
-             
-                if ("0".equalsIgnoreCase(detail.getFrequency())) {
-                    sumTemp.addMetastasizesTo("<i>not</i> " + detail.getOrganAffectedName());
-                } else {
-                    sumTemp.addMetastasizesTo(detail.getOrganAffectedName());
-                    sumTemp.addTFKeyWithFrequency(detail.getTumorFrequencyKey());
-                }
-
-                sumTemp.setImages(detail.getImageCount());
-                sumTemp.setCytoImages(detail.getCytoImages());
-                sumTemp.setMetastasis(detail.getMetastasis());
-            } else {
-                sumTemp = new MTBStrainTumorSummaryDTO(detail);
-            }
-
-            mapTumors.put(key.toString(), sumTemp);
-        }
-
-        return mapTumors;
-    }
+      
 
      public ArrayList<LabelValueBean> getStrainsForGrid() {
         ArrayList<LabelValueBean> strains = new ArrayList<LabelValueBean>();
@@ -1165,43 +1116,7 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
         return strains;
     }
      
-     public ArrayList<LabelValueBean> getStrainsFromFamilies(String[] familyKeys) {
-        ArrayList<LabelValueBean> strains = new ArrayList<LabelValueBean>();
-        Connection conn = null;
-        ResultSet rs = null;
-        Statement stmt = null;
-        StringBuffer keysList = new StringBuffer();
-        keysList.append("( "+familyKeys[0]);
-        for(int i =1; i < familyKeys.length; i++){
-          keysList.append(", "+familyKeys[i]);
-        }
-        keysList.append(" ) ");
-        try {
-            StringBuffer sbSelect = new StringBuffer();
-            sbSelect.append("select distinct s.name, s._strain_key from Strain s, TumorFrequency tf ");
-            sbSelect.append("where  s._strain_key = tf._strain_key "); 
-            sbSelect.append("and s._strain_key in (select _Strain_key from StrainTypeAssoc where _StrainType_key in (8)) ");
-            sbSelect.append("and s._strainfamily_key in "+keysList.toString());
-            sbSelect.append(" order by s.name ");
-
-            conn = getConnection();
-            stmt = conn.createStatement();
-            rs = stmt.executeQuery(sbSelect.toString());
-
-            while (rs.next()) {
-                LabelValueBean lvb = new LabelValueBean(rs.getString(1), rs.getLong(2));
-                strains.add(lvb);
-            }
-        } catch (SQLException sqle) {
-            log.error("Error retrieving strains for grid", sqle);
-        } finally {
-            close(stmt, rs);
-            freeConnection(conn);
-        }
-
-        return strains;
-    }
-
+   
 
    
 }

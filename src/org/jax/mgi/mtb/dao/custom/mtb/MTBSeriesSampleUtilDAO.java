@@ -701,7 +701,8 @@ public class MTBSeriesSampleUtilDAO extends MTBUtilDAO {
 
     }
 
-    // data for webservice to provide TF info associated with GEO records
+    
+    // data for webservice? to provide TF info associated with GEO records
     public ArrayList<ArrayList<String>> getGEOTFData(String gse, String gpl) {
 
         // the first List should be column names to build the JSON
@@ -715,7 +716,7 @@ public class MTBSeriesSampleUtilDAO extends MTBUtilDAO {
              StringBuffer sql = new StringBuffer();
            
              
-             sql.append(" Select ss.id as Series,  s.id as Sample,  s.platform as Platform,  o.name as Organ, ");
+            sql.append(" Select ss.id as Series,  s.id as Sample,  s.platform as Platform,  o.name as Organ, ");
             sql.append(" tc.name as TumorClassification,  sx.sex as Sex,  str.name as Strain, a.name as TreatmentAgent, ");
             sql.append(" tf.colonySize as ColonySize, tf.numMiceAffected as NumberAffected, ");
             sql.append(" tf.incidence as Incidence, tf.ageOnset as AgeOnset, tf.ageDetection as AgeDetection, ");

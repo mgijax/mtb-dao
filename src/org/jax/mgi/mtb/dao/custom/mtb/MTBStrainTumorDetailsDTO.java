@@ -292,13 +292,6 @@ public class MTBStrainTumorDetailsDTO {
         }
     }
 
-    public Collection<String> DontGetReferenceCollection() {
-        if (mapReferences == null) {
-            return new ArrayList<String>();
-        } else {
-            return new ArrayList<String>(mapReferences.keySet());
-        }
-    }
 
     public Collection<String> getAgentKeysCollection() {
         if (mapAgentKeys == null) {
@@ -324,13 +317,7 @@ public class MTBStrainTumorDetailsDTO {
         mapStrainTypes.put(strStrainType, strStrainType);
     }
 
-    public void DontAddReference(String strRef) {
-        if (mapReferences == null) {
-            mapReferences = new HashMap<String, String>();
-        }
-
-        mapReferences.put(strRef, strRef);
-    }
+   
 
     public void addAgentKey(String strAgentKey) {
         if (mapAgentKeys == null) {

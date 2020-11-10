@@ -178,7 +178,7 @@ public class MTBAdvancedSearchDAO extends MTBUtilDAO {
     /**
      * Perform the composite search.
      */
-    public SearchResults<MTBStrainTumorSummaryDTO> search(Collection<String> colOrgansOrigin,
+   public SearchResults<MTBStrainTumorSummaryDTO> search(Collection<String> colOrgansOrigin,
                                 Collection<String> colTumorClassifications,
                                 int nAgentType,
                                 boolean bRestrictToMetastasis,

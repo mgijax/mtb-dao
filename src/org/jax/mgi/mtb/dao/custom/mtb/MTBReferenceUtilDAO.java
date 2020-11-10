@@ -164,7 +164,13 @@ public class MTBReferenceUtilDAO extends MTBUtilDAO {
             "   and tf._Reference_key = ?" +
             " order by metastasis, _Parent_key, oo.name, tc.name, oa.name";
     
-    
+    private final static String SQL_COUNT = 
+            " select count(*) from "+
+	    " (select distinct _reference_key from "+
+            " (select _reference_key from referencetumortypeassoc "+
+            " union select _reference_key from strainreferences "+
+            " union select _reference_key from tumorfrequency) as refs) as allrefs ";
+
     
     // -------------------------------------------------------------- Constants
     public static final int ID_YEAR = 0;
@@ -227,6 +233,32 @@ public class MTBReferenceUtilDAO extends MTBUtilDAO {
 
         return journals;
     }
+    
+    
+     public int getReferenceCount() {
+        int count = 0;
+        Connection conn = null;
+        ResultSet rs = null;
+        Statement stmt = null;
+
+        try {
+            conn = getConnection();
+            stmt = conn.createStatement();
+            rs = stmt.executeQuery(SQL_COUNT);
+            rs.next() ;
+            count = rs.getInt(1);
+            
+        } catch (SQLException sqle) {
+            log.error("Error retreiving reference counts.", sqle);
+        } finally {
+            close(stmt, rs);
+            freeConnection(conn);
+        }
+
+        return count;
+    }
+    
+    
 
     /**
      * Get a MTBReferenceDetailDTO object by accession id.
@@ -506,6 +538,8 @@ public class MTBReferenceUtilDAO extends MTBUtilDAO {
             }
             
             if (params.getIsReviewArticle()) {
+                
+                // um I think this should be r.isreviewarticle = 1
                 sbSelect.append(" and r.priority = 1 ");
             }
 
@@ -941,30 +975,8 @@ public class MTBReferenceUtilDAO extends MTBUtilDAO {
         return referenceTumorTypes;
     }
 
-    /**
-     * Get tumor recs
-     *
-     * @deprecated
-     */
-    public SearchResults<MTBStrainTumorSummaryDTO> getTumorRecs(int referenceKey) {
-
-        MTBTumorUtilDAO dao = MTBTumorUtilDAO.getInstance();
-
-        TumorFrequencySearchParams tfParams = new TumorFrequencySearchParams();
-        tfParams.setReferenceKey(referenceKey);
-        StrainSearchParams sParams = new StrainSearchParams();
-
-        // create the collection of matching tumor to return
-        SearchResults<MTBStrainTumorSummaryDTO> res = null;
-
-        try {
-            res = dao.searchNewSummary(tfParams, sParams, "", -1);
-        } catch (Exception daoe) {
-            log.error("Error retreiving tumor records for reference = " + referenceKey, daoe);
-        }
-
-        return res;
-    }
+    
+   
 
     /**
      * List of organs associated with references either by way of tumor
