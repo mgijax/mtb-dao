@@ -237,6 +237,181 @@ public class MTBPathologyImageUtilDAO  extends MTBUtilDAO {
         return singleton;
     }
     
+    /**
+     * Get a pathology image detail record for the images key.
+     *
+     * @param lImagesKey the image key
+     * @return a MTBPathologyImageDetailDTO object
+     */
+     public MTBPathologyImageDetailDTO getPathology(long lImagesKey) {
+        MTBPathologyImageDetailDTO detail = null;
+
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = getConnection();
+            pstmt = conn.prepareStatement(SQL_PATHOLOGY_DETAIL);
+            pstmt.setLong(1, lImagesKey);
+            rs = pstmt.executeQuery();
+            long lPathKey = -1l;
+
+            while (rs.next()) {
+                detail = new MTBPathologyImageDetailDTO();
+                lPathKey = rs.getLong(33);
+
+               
+                
+                detail.setImgRefKey(rs.getInt(35));
+                detail.setImgRefAccId(rs.getString(36));
+                
+                detail.setPathologist(rs.getString(37));
+                detail.setPathologistAccId(rs.getString(38));
+                detail.setPathologistRefKey(rs.getString(39));
+
+            
+                detail.setImageKey(rs.getInt(1));
+                detail.setImageUrl(rs.getString(2));
+                detail.setImageUrlPath(rs.getString(3));
+                detail.setImageThumbName(rs.getString(4));
+                detail.setImageName(rs.getString(5));
+                detail.setZoomifyDir(rs.getString(32));
+                detail.setCaption(rs.getString(6));
+                detail.setImageNote(rs.getString(7));
+                detail.setAgeAtNecropsy(rs.getString(8));
+                detail.setPathologyDescription(rs.getString(9));
+                detail.setPathologyNote(rs.getString(10));
+                
+                //contributor author
+                detail.setSourceOfImage(rs.getString(34));
+                detail.setInstitution(rs.getString(14));
+                detail.setMethod(rs.getString(15));
+                if((detail.getMethod() != null)&&
+                  (detail.getMethod().length() < 2)){
+                  detail.setMethod(null);
+                }
+
+                // frequency information
+                detail.setReferenceKey(rs.getString(11));
+                detail.setAccessionId(rs.getString(12));
+                detail.setTumorFrequencyKey(rs.getInt(19));
+                detail.setSex(rs.getString(20));
+                detail.setColonySize(rs.getString(21));
+                detail.setNumMiceAffected(rs.getString(22));
+                detail.setFrequencyNote(rs.getString(23));
+                detail.setAgeOfOnset(rs.getString(24));
+                detail.setAgeOfDetection(rs.getString(25));
+                detail.setFrequency(rs.getString(26));
+
+                // tumor information
+                detail.setOrganOrigin(rs.getString(16));
+                detail.setTumorClassName(rs.getString(17));
+                detail.setOrganAffected(rs.getString(18));
+                detail.setReproductiveStatus(rs.getString(27));
+                detail.setTumorTypeKey(rs.getInt(31));
+                
+                
+                
+             
+                // tumor synomyms
+                try {
+                    TumorFrequencySynonymsDAO tumorSynonymsDAO = TumorFrequencySynonymsDAO.getInstance();
+                    List<TumorFrequencySynonymsDTO> tumorSynonymsArr = tumorSynonymsDAO.loadByTumorFrequencyKey(new Long(detail.getTumorFrequencyKey()));
+                    detail.setTumorSynonyms(new ArrayList<TumorFrequencySynonymsDTO>(tumorSynonymsArr));
+                } catch (Exception e) {
+                    log.error("Error retrieving tumor synonyms for tfKey " +
+                              detail.getTumorFrequencyKey(), e);
+                }
+
+                // tumor frequency treatments
+                try {
+                    TumorFrequencyTreatmentsDAO tftDAO = TumorFrequencyTreatmentsDAO.getInstance();
+                    List<TumorFrequencyTreatmentsDTO> tftArr = tftDAO.loadByTumorFrequencyKey(new Long(detail.getTumorFrequencyKey()));
+                    List<AgentDTO> agents = new ArrayList<AgentDTO>();
+
+                    for (TumorFrequencyTreatmentsDTO dtoTF : tftArr) {
+                        AgentDTO dto = tftDAO.getAgentDTO(dtoTF);
+                        agents.add(dto);
+                    }
+
+                    detail.setAgents(agents);
+
+                    if (agents.size() > 0) {
+                        AgentDAO agentDAO = AgentDAO.getInstance();
+                        AgentDTO dto = agents.get(0);
+                        detail.setTreatmentType(DAOUtils.nvl(agentDAO.getAgentTypeDTO(dto).getName(), NONE));
+                    } else {
+                        detail.setTreatmentType(NONE);
+                    }
+                } catch (Exception e) {
+                    log.error("Error retrieving tumor treatments for tfKey " +
+                              detail.getTumorFrequencyKey(), e);
+                }
+
+                // retrive the TEXT columns
+                // the reason for this is because the data was being truncated
+                PathologyDAO daoPath = PathologyDAO.getInstance();
+                PathologyImagesDAO daoPathImages = PathologyImagesDAO.getInstance();
+                PathologyDTO dtoPath = daoPath.loadByPrimaryKey(lPathKey);
+                PathologyImagesDTO dtoPathImages = daoPathImages.loadByPrimaryKey(lImagesKey, lPathKey);
+                detail.setPathologyDescription(dtoPath.getDescription());
+                detail.setPathologyNote(dtoPath.getNote());
+                detail.setCaption(dtoPathImages.getCaption());
+                detail.setImageNote(dtoPathImages.getNotes());
+                
+                if(dtoPathImages.getCopyright() != null && 
+                        dtoPathImages.getCopyright().length() >2){
+                  detail.setCopyright(dtoPathImages.getCopyright());
+                }
+                
+                if(dtoPathImages.getCopyright()!=null && dtoPathImages.getCopyright().length()>1)
+                {
+                   detail.setCopyright(dtoPathImages.getCopyright());
+                }
+
+                // strain information
+                detail.setStrainKey(rs.getInt(28));
+                detail.setStrainName(rs.getString(29));
+                detail.setStrainNote(rs.getString(30));
+
+                // get the strain types
+                StrainDAO strainDAO = StrainDAO.getInstance();
+                StrainDTO strainDTO = strainDAO.createStrainDTO();
+                strainDTO.setStrainKey(detail.getStrainKey());
+                List<StrainTypeDTO> listStrainTypes = strainDAO.loadStrainTypeViaStrainTypeAssoc(strainDTO);
+                detail.setStrainTypes(new ArrayList<StrainTypeDTO>(listStrainTypes));
+               
+                // get the associated strain synonyms
+                StrainSynonymsDAO strainSynonymsDAO = StrainSynonymsDAO.getInstance();
+                List <StrainSynonymsDTO> listSynonym = strainSynonymsDAO.loadByStrainKey(new Long(detail.getStrainKey()));
+                detail.setStrainSynonyms(new ArrayList<StrainSynonymsDTO>(listSynonym));
+                
+                // get the image probes
+                ProbeDAO probeDAO = ProbeDAO.getInstance();
+                StringBuffer sql = new StringBuffer();
+                sql.append("where _probe_key in ");
+                sql.append("(select _probe_key from PathologyImagesProbes");
+                sql.append(" where _pathology_key = ");
+                sql.append(lPathKey);
+                sql.append(" and _images_key =");
+                sql.append(lImagesKey);
+                sql.append(")");
+                List<ProbeDTO> listProbes = probeDAO.loadByWhere(sql.toString());
+              
+                detail.setProbes(listProbes);
+                
+            }
+        } catch (SQLException sqle) {
+            log.error("Error getting pathology data for key = " + lImagesKey,
+                      sqle);
+        } finally {
+            close(pstmt, rs);
+            freeConnection(conn);
+        }
+
+        return detail;
+    }
     
     
     public int getImageCount() {
@@ -426,9 +601,49 @@ public class MTBPathologyImageUtilDAO  extends MTBUtilDAO {
         return listMethods;
     }
     
+   // called by faceted search
+      public SearchResults<MTBPathologyImageSearchDTO> searchPathologyByTF(String tfKeys)
+        throws NullPointerException, IllegalArgumentException, DAOException {
   
+          return searchPathologyExtended(null,
+                                            null,
+                                            -1,
+                                            null,
+                                            null,
+                                            null,
+                                            null,
+                                            -1,
+                                            tfKeys,
+                                            "strain",
+                                            -1);
+      }
     
+    // called by WI
+      // for backwards compatability add null tfKeys as a parameter then call extended search
+       public SearchResults<MTBPathologyImageSearchDTO> searchPathology(Collection organTissuesOrigin,
+                                            Collection tumorClassifications,
+                                            int organTissuesAffected,
+                                            String imagePathologyDescription,
+                                            String method,
+                                            Collection antibodies,
+                                            Collection contributors,
+                                            int referenceKey,
+                                            String orderBy,
+                                            int maxItems)
+        throws NullPointerException, IllegalArgumentException, DAOException {
     
+           return  searchPathologyExtended(organTissuesOrigin,
+                                            tumorClassifications,
+                                            organTissuesAffected,
+                                            imagePathologyDescription,
+                                            method,
+                                            antibodies,
+                                            contributors,
+                                            referenceKey,
+                                            null,
+                                            orderBy,
+                                            maxItems);
+       }
       
      private  SearchResults<MTBPathologyImageSearchDTO> searchPathologyExtended(Collection organTissuesOrigin,
                                             Collection tumorClassifications,
