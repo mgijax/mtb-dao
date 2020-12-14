@@ -396,6 +396,41 @@ public class PDXDAO {
         return graphics;
 
     }
+    
+     public ArrayList<PDXGraphic> getHistologyImages() {
+        ArrayList<PDXGraphic> histologyImages = new ArrayList<PDXGraphic>();
+        Connection con = null;
+        PreparedStatement s = null;
+        ResultSet rs = null;
+        try {
+            con = getConnection();
+            s = con.prepareStatement("Select  modelid, description, filename from pdxgraphic where _pdxcharacterization_key = 1 ");
+            
+            rs = s.executeQuery();
+            while (rs.next()) {
+                PDXGraphic graphic = new PDXGraphic();
+                graphic.setModelID(rs.getString(1));
+                graphic.setDescription(rs.getString(2));
+                graphic.setFileName(rs.getString(3));
+                histologyImages.add(graphic);
+            }
+
+        } catch (SQLException e) {
+            log.error("Error getting PDX histology images",e);
+        } finally {
+            try {
+                rs.close();
+                s.close();
+                con.close();
+
+            } catch (Exception e) {
+                log.error(e);
+            }
+        }
+
+        return histologyImages;
+
+    }
 
     public ArrayList<PDXLink> getLinks(String id) {
         ArrayList<PDXLink> links = new ArrayList<PDXLink>();
