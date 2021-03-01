@@ -677,27 +677,28 @@ public class PDXDAO {
     }
 
 
-    public String getHumanGenes(String query, String page, String limit) {
+    public String getHumanGenes(String query, boolean ctpOnly) {
 
         query = query.replaceAll("'", "''");
         query = query.toLowerCase();
 
-        int offset = 0;
-        try {
-            int pg = new Integer(page);
-            int lmt = new Integer(limit);
-            offset = pg * lmt;
-        } catch (NumberFormatException nfe) {
-            log.error("Cant compute offset from page:" + page + " and limit:" + limit);
+//        int offset = 0;
+//        try {
+//            int pg = new Integer(page);
+//            int lmt = new Integer(limit);
+//            offset = pg * lmt;
+//        } catch (NumberFormatException nfe) {
+//            log.error("Cant compute offset from page:" + page + " and limit:" + limit);
+//        }
+        String ctp ="";
+        if(ctpOnly){
+            ctp = "and isctp ";
         }
-
-        String count = "select count(*) from humangenes where available and lower(display) like ? ";
-
-        String sql = "select symbol,display from humangenes where available and lower(display) like ? order by display limit " + limit + " offset " + offset;
+       
+        String sql = "select symbol,display from humangenes where available and lower(display) like ? "+ctp+" order by display";
 
         Connection con = null;
         PreparedStatement s = null;
-        PreparedStatement s2 = null;
         ResultSet rs = null;
 
         StringBuilder sb = new StringBuilder();
@@ -707,16 +708,59 @@ public class PDXDAO {
             s = con.prepareStatement(sql);
             s.setString(1, query + "%");
 
-            s2 = con.prepareStatement(count);
-            s2.setString(1, query + "%");
-
-            rs = s2.executeQuery();
-            rs.next();
-            int total = rs.getInt(1);
-            sb.append("{\"total\":").append(total).append(",\"data\":[");
+           
+            sb.append("{\"data\":[");
 
             rs = s.executeQuery();
 
+            while (rs.next()) {
+
+            
+                sb.append("[\"").append(rs.getString(1)).append("\",\"").append(rs.getString(2)).append("\"],");
+
+            }
+
+            sb.replace(sb.length() - 1, sb.length(), "]");
+            sb.append("}");
+
+        } catch (Exception e) {
+            log.error(e);
+        } finally {
+            try {
+                rs.close();
+                s.close();
+              
+                con.close();
+
+            } catch (Exception e) {
+                log.error(e);
+            }
+        }
+
+        return sb.toString();
+
+    }
+    
+    
+     public String getCTPGenes() {
+
+
+        String sql = "select symbol,display from humangenes where available and isctp";
+
+        Connection con = null;
+        PreparedStatement s = null;
+      
+        ResultSet rs = null;
+
+        StringBuilder sb = new StringBuilder();
+        try {
+            con = getConnection();
+
+            s = con.prepareStatement(sql);
+           
+            rs = s.executeQuery();
+
+            sb.append("[");
             while (rs.next()) {
 
                 //           sb.append("{\"value\":\"").append(rs.getString(1)).append("\",\"display\":\"").append(rs.getString(2)).append("\"},");
@@ -725,7 +769,7 @@ public class PDXDAO {
             }
 
             sb.replace(sb.length() - 1, sb.length(), "]");
-            sb.append("}");
+           
 
         } catch (Exception e) {
             log.error(e);
