@@ -675,6 +675,103 @@ public class PDXDAO {
         return contents;
 
     }
+    
+    public ArrayList<String> checkSynonyms(String gene){
+        gene = gene.toLowerCase();
+       
+        String sql = "select symbol,display from humangenes where available and (lower(symbol)=? or lower(display) like ?) order by display";
+
+        Connection con = null;
+        PreparedStatement s = null;
+        ResultSet rs = null;
+        
+        ArrayList<String> details = new ArrayList<>();
+
+        
+        try {
+            con = getConnection();
+
+            s = con.prepareStatement(sql);
+            s.setString(1, gene);
+            s.setString(2, gene + "(%");
+
+            
+           
+          
+
+            rs = s.executeQuery();
+
+           
+            ArrayList<String> symbol = new ArrayList<>();
+            ArrayList<String> display = new ArrayList<>();
+                   
+            boolean official = false;
+            
+            loop: while (rs.next()) {
+                
+                if(rs.getString(1).equals(rs.getString(2))){
+                    official = true;
+                    break loop;
+                }
+                symbol.add(rs.getString(1));
+                display.add(rs.getString(2));
+            
+          
+            }
+            
+            if(official){
+                details.add(gene);
+                details.add("");
+                
+            }else{
+            
+                if(symbol.size()==1){
+                    details.add(symbol.get(0));
+                    if(symbol.get(0).equals(display.get(0))){
+                        //offical symbol
+                       details.add(""); 
+                    }else{
+                        // single synonym
+                        details.add(display.get(0));
+                    }
+                }
+                if(symbol.size()==0){
+                    details.add(0,gene);
+                    details.add(1,"No data or unknown gene");
+                }
+                //ambigious symbol
+                if(symbol.size()>1){
+                    details.add(0,symbol.get(0));
+                    StringBuilder sb = new StringBuilder("Ambigious gene symbol ").append(gene.toUpperCase());
+                    for(int i = 0; i < symbol.size(); i++){
+                        sb.append(",").append(display.get(i));
+                    }
+                    details.add(1, sb.toString()+",searched using "+details.get(0).toUpperCase());
+                }
+            }
+            
+          
+            
+
+          
+        } catch (Exception e) {
+            log.error(e);
+        } finally {
+            try {
+                rs.close();
+                s.close();
+              
+                con.close();
+
+            } catch (Exception e) {
+                log.error(e);
+            }
+        }
+
+        return details;
+
+        
+    }
 
 
     public String getHumanGenes(String query, boolean ctpOnly) {
@@ -682,14 +779,7 @@ public class PDXDAO {
         query = query.replaceAll("'", "''");
         query = query.toLowerCase();
 
-//        int offset = 0;
-//        try {
-//            int pg = new Integer(page);
-//            int lmt = new Integer(limit);
-//            offset = pg * lmt;
-//        } catch (NumberFormatException nfe) {
-//            log.error("Cant compute offset from page:" + page + " and limit:" + limit);
-//        }
+
         String ctp ="";
         if(ctpOnly){
             ctp = "and isctp ";
