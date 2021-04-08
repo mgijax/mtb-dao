@@ -742,11 +742,24 @@ public class PDXDAO {
                 //ambigious symbol
                 if(symbol.size()>1){
                     details.add(0,symbol.get(0));
-                    StringBuilder sb = new StringBuilder("Ambigious gene symbol ").append(gene.toUpperCase());
+                    StringBuilder sb = new StringBuilder("Ambigious gene symbol ").append(gene.toUpperCase()).append(";");
                     for(int i = 0; i < symbol.size(); i++){
-                        sb.append(",").append(display.get(i));
+                        if(symbol.size()>1){
+                            if(i == 0){
+                                sb.append(display.get(i).replace(gene.toUpperCase(),"").replace(")", ", "));
+                            }else{
+                                sb.append(display.get(i).replace(gene.toUpperCase(),"").replace("(synonym for","").replace(")", ","));
+                            }
+                        }
+                        else{
+                            sb.append(display.get(i));
+                        }
                     }
-                    details.add(1, sb.toString()+",searched using "+details.get(0).toUpperCase());
+                    if(symbol.size()>1){
+                        sb.replace(sb.length()-1, sb.length(), "");
+                        sb.append(")");
+                    }
+                    details.add(1, sb.toString()+";Searched using "+details.get(0).toUpperCase());
                 }
             }
             

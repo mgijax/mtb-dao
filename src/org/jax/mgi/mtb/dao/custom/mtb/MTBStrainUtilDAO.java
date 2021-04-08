@@ -131,9 +131,11 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
             " order by ss.name";
 
     private final static String SQL_STRAIN_NOTES =
-            "select sn._StrainNotes_key, sn._Strain_key, sn._Reference_key, sn.note, a.accId " +
-            "  from StrainNotes sn, Accession a " +
+            "select distinct sn._StrainNotes_key, sn._Strain_key, sn._Reference_key, sn.note, a.accId, r.shortCitation " +
+            "  from StrainNotes sn, Accession a, Reference r " +
             " where a._Object_key = sn._Reference_key " +
+            "   and a._Object_key = r._reference_key " +
+            "   and a.prefixpart = 'J:' " +
             "   and a._MTBTypes_key = 6 " +
             "   and sn._Strain_key = ? " +
             " order by sn._StrainNotes_key";
@@ -734,6 +736,7 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
                 note.setReferenceKey(rs.getLong(3));
                 note.setNote(rs.getString(4));
                 note.getDataBean().put("ACCID", rs.getString(5));
+                note.getDataBean().put("CITE", rs.getString(6));
                 strainNotes.add(note);
             }
         } catch (SQLException sqle) {
