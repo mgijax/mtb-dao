@@ -676,6 +676,11 @@ public class PDXDAO {
 
     }
     
+    /* return a pair of strings 
+        #1 gene symbol used for search
+        #2 note on what interpolation took place
+            using ; as delimiter should be replace depending on display 
+     */
     public ArrayList<String> checkSynonyms(String gene){
         gene = gene.toLowerCase();
        
@@ -724,47 +729,59 @@ public class PDXDAO {
                 details.add("");
                 
             }else{
-            
+                if(symbol.size()==0){
+                    details.add(0,gene);
+                    details.add(1,"No gene match.;Verify gene symbol in HGNC.");
+                }
+                
+                
                 if(symbol.size()==1){
                     details.add(symbol.get(0));
                     if(symbol.get(0).equals(display.get(0))){
                         //offical symbol
                        details.add(""); 
                     }else{
+                   //     details.add(symbol.get(0));
                         // single synonym
-                        details.add(display.get(0));
+                        String displayStr = display.get(0);
+                        if(displayStr.contains("official")){
+                            displayStr = displayStr.split("\\(")[0];
+                            displayStr = "Official symbol:"+displayStr+";Synonym:"+symbol.get(0);
+                        }
+                        if(displayStr.contains("synonym")){
+                            displayStr = displayStr.split("\\(")[0];
+                            displayStr = "Official symbol:"+symbol.get(0)+";Synonym:"+displayStr;
+                        }
+                        details.add(displayStr);
                     }
                 }
-                if(symbol.size()==0){
-                    details.add(0,gene);
-                    details.add(1,"No data or unknown gene");
-                }
+                
                 //ambigious symbol
                 if(symbol.size()>1){
                     details.add(0,symbol.get(0));
-                    StringBuilder sb = new StringBuilder("Ambigious gene symbol ").append(gene.toUpperCase()).append(";");
-                    for(int i = 0; i < symbol.size(); i++){
-                        if(symbol.size()>1){
-                            if(i == 0){
-                                sb.append(display.get(i).replace(gene.toUpperCase(),"").replace(")", ", "));
-                            }else{
-                                sb.append(display.get(i).replace(gene.toUpperCase(),"").replace("(synonym for","").replace(")", ","));
-                            }
-                        }
-                        else{
-                            sb.append(display.get(i));
-                        }
-                    }
-                    if(symbol.size()>1){
-                        sb.replace(sb.length()-1, sb.length(), "");
-                        sb.append(")");
-                    }
-                    details.add(1, sb.toString()+";Searched using "+details.get(0).toUpperCase());
+                    StringBuilder sb = new StringBuilder("Ambigious gene symbol in query ").append(gene.toUpperCase()).append(".;");
+                    sb.append(symbol.get(0)).append(" used.;Verify gene symbol in HGNC.");
+//                    for(int i = 0; i < symbol.size(); i++){
+//                        if(symbol.size()>1){
+//                            
+//                                sb.append(display.get(i).replace(gene.toUpperCase(),"").replace("(synonym for","").replace(")", ","));
+//                            
+//                        }
+//                        else{
+//                            sb.append(display.get(i));
+//                        }
+//                    }
+//                    if(symbol.size()>1){
+//                        sb.replace(sb.length()-1, sb.length(), "");
+//                        sb.append(")");
+//                    }
+                    details.add(1, sb.toString());
                 }
             }
             
-          
-            
+            System.out.println(gene+" details:");
+            System.out.println("0:"+details.get(0));
+            System.out.println("1:"+details.get(1));
 
           
         } catch (Exception e) {

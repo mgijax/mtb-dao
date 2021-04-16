@@ -21,12 +21,12 @@ import org.apache.log4j.Logger;
 import org.jax.mgi.mtb.dao.DAOException;
 import org.jax.mgi.mtb.dao.custom.SearchResults;
 import org.jax.mgi.mtb.dao.custom.mtb.param.ReferenceSearchParams;
-import org.jax.mgi.mtb.dao.custom.mtb.param.StrainSearchParams;
-import org.jax.mgi.mtb.dao.custom.mtb.param.TumorFrequencySearchParams;
 import org.jax.mgi.mtb.dao.gen.mtb.MarkerDAO;
 import org.jax.mgi.mtb.dao.gen.mtb.MarkerDTO;
 import org.jax.mgi.mtb.dao.gen.mtb.ReferenceDAO;
 import org.jax.mgi.mtb.dao.gen.mtb.ReferenceDTO;
+import org.jax.mgi.mtb.dao.gen.mtb.StrainNotesDAO;
+import org.jax.mgi.mtb.dao.gen.mtb.StrainNotesDTO;
 import org.jax.mgi.mtb.dao.mtb.MTBUtilDAO;
 import static org.jax.mgi.mtb.dao.mtb.MTBUtilDAO.NONE;
 import org.jax.mgi.mtb.dao.utils.DAOUtils;
@@ -170,6 +170,14 @@ public class MTBReferenceUtilDAO extends MTBUtilDAO {
             " (select _reference_key from referencetumortypeassoc "+
             " union select _reference_key from strainreferences "+
             " union select _reference_key from tumorfrequency) as refs) as allrefs ";
+    
+    private final static String SQL_STRAIN_NOTES =
+            "select distinct sn.note,sn._strain_key, s.name" +
+            "  from StrainNotes sn, Strain s " +
+            " where sn._strain_key = s._strain_key " +
+            "   and sn._Reference_key = ? " +
+            " order by s.name,sn._strain_key desc";
+
 
     
     // -------------------------------------------------------------- Constants
@@ -666,6 +674,54 @@ public class MTBReferenceUtilDAO extends MTBUtilDAO {
         resCollection = new SearchResults<MTBReferenceSearchDTO>(references, totalItemsFound);
         return resCollection;
     }
+    
+    
+    
+    public List<StrainNotesDTO> getStrainNotes(long refKey, String delimiter) {
+        Timer timer = new Timer();
+        List<StrainNotesDTO> strainNotes = new ArrayList<StrainNotesDTO>();
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            // get a connection, create a statement, and execute the query
+            conn = getConnection();
+            pstmt = conn.prepareStatement(SQL_STRAIN_NOTES);
+            pstmt.setLong(1, refKey);
+            rs = pstmt.executeQuery();
+            StrainNotesDAO daoStrainNotes = StrainNotesDAO.getInstance();
+            String key = null, name = null;
+            // loop through the results
+            while (rs.next()) {
+               
+                if(rs.getString(2).equals(key) && rs.getString(3).equals(name)){
+                 StrainNotesDTO dto = strainNotes.get(strainNotes.size()-1);
+                 dto.setNote(dto.getNote()+delimiter+rs.getString(1));   
+                }else{
+                    key = rs.getString(2);
+                    name = rs.getString(3);
+                    StrainNotesDTO note = daoStrainNotes.createStrainNotesDTO();
+                    note.setNote(rs.getString(1));
+                    note.getDataBean().put("STRKEY", key);
+                    note.getDataBean().put("STRNAME", name );
+                    strainNotes.add(note);
+                }
+            }
+        } catch (SQLException sqle) {
+            log.error("Error getting strain notes for reference "+refKey, sqle);
+        } finally {
+            close(pstmt, rs);
+            freeConnection(conn);
+        }
+
+        if (log.isInfoEnabled()) {
+            log.info("Getting strain notes for reference took: " + timer.toString());
+        }
+
+        return strainNotes;
+    }
+
 
     // ------------------------------------------------------ Protected Methods
     // none
