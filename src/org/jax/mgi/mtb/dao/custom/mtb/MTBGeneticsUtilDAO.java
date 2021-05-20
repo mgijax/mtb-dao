@@ -694,6 +694,29 @@ public class MTBGeneticsUtilDAO extends MTBUtilDAO {
     return ret;
   }
   
+   public List<String> getStrainAlleleIDs()
+          throws NullPointerException, IllegalArgumentException, DAOException {
+    Connection conn = null;
+    ResultSet rs = null;
+    List<String> alleles = new ArrayList<String>();
+
+    try {
+      conn = getConnection();
+      Statement stmt = conn.createStatement();
+      rs = stmt.executeQuery("select distinct a.accid " +
+                            "from accession a, allelepair ap, genotype g " +
+                            "where a._mtbtypes_key = 3 " +
+                            "and (a._object_key = ap._allele1_key or a._object_key = ap._allele2_key) " +
+                            "and g._allelepair_key = ap._allelepair_key");
+      while(rs.next()){
+          alleles.add(rs.getString(1));
+      }
+
+    }catch(Exception e){}
+    
+    return alleles;
+   }
+  
   /**
    * Gets a single MTBTumorGenticChangesDTO
    * @param tgcKey
