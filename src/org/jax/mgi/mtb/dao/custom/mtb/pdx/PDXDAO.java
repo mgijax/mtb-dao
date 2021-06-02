@@ -21,7 +21,7 @@ import org.jax.mgi.mtb.dao.utils.DAOUtils;
  * @author sbn
  */
 public class PDXDAO {
-
+   
     private static final Logger log
             = Logger.getLogger(PDXDAO.class.getName());
     private static PDXDAO singleton = null;
@@ -29,7 +29,8 @@ public class PDXDAO {
     private static String url;
     private static String user;
     private static String password;
-
+    
+   
    
    
 
@@ -684,7 +685,7 @@ public class PDXDAO {
     public ArrayList<String> checkSynonyms(String gene){
         gene = gene.toLowerCase();
        
-        String sql = "select symbol,display from humangenes where available and (lower(symbol)=? or lower(display) like ?) order by display";
+        String sql = "select symbol,display, available from humangenes where  (lower(symbol)=? or lower(display) like ?) order by display";
 
         Connection con = null;
         PreparedStatement s = null;
@@ -711,11 +712,14 @@ public class PDXDAO {
             ArrayList<String> display = new ArrayList<>();
                    
             boolean official = false;
-            
+            boolean available = true;
             loop: while (rs.next()) {
+                
+                available = rs.getBoolean(3);
                 
                 if(rs.getString(1).equals(rs.getString(2))){
                     official = true;
+                    
                     break loop;
                 }
                 symbol.add(rs.getString(1));
@@ -726,7 +730,11 @@ public class PDXDAO {
             
             if(official){
                 details.add(gene);
-                details.add("");
+                if(!available){
+                    details.add("No data for gene.");
+                }else{
+                    details.add("");
+                }
                 
             }else{
                 if(symbol.size()==0){
@@ -862,10 +870,12 @@ public class PDXDAO {
     }
     
     
-     public String getCTPGenes() {
+     public ArrayList<String> getCTPGenes() {
 
 
-        String sql = "select symbol,display from humangenes where available and isctp";
+         ArrayList<String> genes = new ArrayList<>();
+         
+        String sql = "select symbol from humangenes where available and isctp";
 
         Connection con = null;
         PreparedStatement s = null;
@@ -880,15 +890,9 @@ public class PDXDAO {
            
             rs = s.executeQuery();
 
-            sb.append("[");
-            while (rs.next()) {
-
-                //           sb.append("{\"value\":\"").append(rs.getString(1)).append("\",\"display\":\"").append(rs.getString(2)).append("\"},");
-                sb.append("[\"").append(rs.getString(1)).append("\",\"").append(rs.getString(2)).append("\"],");
-
-            }
-
-            sb.replace(sb.length() - 1, sb.length(), "]");
+           while(rs.next()){
+               genes.add(rs.getString(1));
+           }
            
 
         } catch (Exception e) {
@@ -904,8 +908,283 @@ public class PDXDAO {
             }
         }
 
-        return sb.toString();
+        return genes;
 
     }
+     
+     
+     
+     // should there be a check that the number of new models is within 
+     // some range of the number of existing models?
+     
+    public void updateModels(ArrayList<PDXMouse> mice) throws SQLException {
+        try {
+            Connection con = getConnection();
+            con.setAutoCommit(false);
+            PreparedStatement s = con.prepareStatement("truncate table pdxmodel");
+            s.execute();
+            
+            s = con.prepareStatement("insert into pdxmodel "
+                    + "(modelID, previousID, institution, tissue, sex, age,"+
+                    " initialDiagnosis, clinicalDiagnosis, strain, location, "+
+                    " sampleType, tumorType, tumorMarkers, race, ethnicity, "+
+                    " sampleSite, primarySite, stage, grade, modelStatus, tag, "+
+                    " currentSmoker, formerSmoker, treatmentNaive, mrn) "+
+                    " values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+            for(PDXMouse mouse : mice){
+                s.setString(1, mouse.getModelID());
+                s.setString(2, mouse.getPreviousID());
+                s.setString(3, mouse.getInstitution());
+                s.setString(4, mouse.getTissue());
+                s.setString(5, mouse.getSex());
+                s.setString(6, mouse.getAge());
+                s.setString(7, mouse.getInitialDiagnosis());
+                s.setString(8, mouse.getClinicalDiagnosis());
+                s.setString(9, mouse.getStrain());
+                s.setString(10, mouse.getLocation());
+                s.setString(11, mouse.getSampleType());
+                s.setString(12, mouse.getTumorType());
+                s.setString(13, mouse.getTumorMarkers());
+                s.setString(14, mouse.getRace());
+                s.setString(15, mouse.getEthnicity());
+                s.setString(16, mouse.getSampleSite());
+                s.setString(17, mouse.getPrimarySite());
+                s.setString(18, mouse.getStage());
+                s.setString(19, mouse.getGrade());
+                s.setString(20, mouse.getModelStatus());
+                s.setString(21, mouse.getTag());
+                s.setString(22, mouse.getCurrentSmoker());
+                s.setString(23, mouse.getFormerSmoker());
+                s.setString(24, mouse.getTreatmentNaive());
+                s.setString(25, mouse.getMrn());
+            
+            
+                s.addBatch();
+            }
+            
+            try{
+                
+                s.executeBatch();
+                con.commit();
+                log.error("No error: Updated database with "+mice.size()+" pdx models");
+            }catch(Exception e){
+                con.rollback();
+                log.error("Update to PDXModels failed");
+            }
+            s.close();
+            con.close();
+        } catch (SQLException e) {
+            
+            log.error(e);
+            throw e;
+            
+        }
+    }
+    
+    
+    public ArrayList<PDXMouse> getModels(boolean forPublic){
+        
+        HashMap<String,ArrayList<String>> additionalContent = this.getPDXAdditionalContent();
+        ArrayList<PDXMouse> mice = new ArrayList<>();
+       
+        
+        String clause ="";
+        if(forPublic){
+            clause = " where tag !='Suspended' ";
+        }
+        try {
+            Connection con = getConnection();
+            PreparedStatement s = con.prepareStatement("select  "+
+                    " modelID, previousID, institution, tissue, sex, age,"+
+                    " initialDiagnosis, clinicalDiagnosis, strain, location, "+
+                    " sampleType, tumorType, tumorMarkers, race, ethnicity, "+
+                    " sampleSite, primarySite, stage, grade, modelStatus, tag, "+
+                    " currentSmoker, formerSmoker, treatmentNaive, mrn "+
+                    " from pdxmodel " + clause);
+            ResultSet r = s.executeQuery();
+            while(r.next()){
+                PDXMouse mouse = new PDXMouse();
+                mouse.setModelID(r.getString(1));
+                mouse.setPreviousID(r.getString(2));
+                mouse.setInstitution(r.getString(3));
+                mouse.setTissue(r.getString(4));
+                mouse.setSex(r.getString(5));
+                mouse.setAge(r.getString(6));
+                mouse.setInitialDiagnosis(r.getString(7));
+                mouse.setClinicalDiagnosis(r.getString(8));
+                mouse.setStrain(r.getString(9));
+                mouse.setLocation(r.getString(10));
+                mouse.setSampleType(r.getString(11));
+                mouse.setTumorType(r.getString(12));
+                mouse.setTumorMarkers(r.getString(13));
+                mouse.setRace(r.getString(14));
+                mouse.setEthnicity(r.getString(15));
+                mouse.setSampleSite(r.getString(16));
+                mouse.setPrimarySite(r.getString(17));
+                mouse.setStage(r.getString(18));
+                mouse.setGrade(r.getString(19));
+                mouse.setModelStatus(r.getString(20));
+                mouse.setTag(r.getString(21));
+                mouse.setCurrentSmoker(r.getString(22));
+                mouse.setFormerSmoker(r.getString(23));
+                mouse.setTreatmentNaive(r.getString(24));
+                mouse.setMrn(r.getString(25));
+                mouse.setAssocData(additionalContent.get(mouse.getModelID()));
+                mice.add(mouse);
+                
+            }
+            
+            
+            s.close();
+            con.close();
+        } catch (SQLException e) {
+            log.error(e);
+            
+        }
+        return mice;
+    }
+    
+     public ArrayList<String> getDiagnosisList(boolean forPublic){
+        ArrayList<String> list = new ArrayList<>(); 
+        String clause ="";
+        if(forPublic){
+            clause = " where tag !='Suspended' ";
+        }
+        try {
+            Connection con = getConnection();
+            PreparedStatement s = con.prepareStatement("select u.diag from ( "+
+                    " select distinct initialDiagnosis as diag from pdxmodel "+
+                    clause +
+                    " union "+
+                    " select  "+
+                    " distinct clinicalDiagnosis as diag from pdxmodel "+
+                    clause + ") as u"); 
+                    
+            ResultSet r = s.executeQuery();
+            while(r.next()){
+                list.add(r.getString(1));
+            }
+         s.close();
+            con.close();
+        } catch (SQLException e) {
+            log.error(e);
+            
+        }
+        return list;
+     }
+     public ArrayList<String> getPrimarySitesList(boolean forPublic){
+        ArrayList<String> list = new ArrayList<>(); 
+        String clause ="";
+        if(forPublic){
+            clause = " where tag !='Suspended' ";
+        }
+        try {
+            Connection con = getConnection();
+            PreparedStatement s = con.prepareStatement("select  "+
+                    " distinct primarySite from pdxmodel "+ clause); 
+                    
+            ResultSet r = s.executeQuery();
+            while(r.next()){
+                list.add(r.getString(1));
+            }
+         s.close();
+            con.close();
+        } catch (SQLException e) {
+            log.error(e);
+            
+        }
+        return list;
+     }
+     
+     public ArrayList<String> getTagsList(boolean forPublic){
+        ArrayList<String> list = new ArrayList<>(); 
+        String clause ="";
+        if(forPublic){
+            clause = " where tag !='Suspended' ";
+        }
+        try {
+            Connection con = getConnection();
+            PreparedStatement s = con.prepareStatement("select  "+
+                    " distinct tag from pdxmodel "+ clause ); 
+                    
+            ResultSet r = s.executeQuery();
+            while(r.next()){
+                if(!r.getString(1).trim().isEmpty()){
+                    list.add(r.getString(1));
+                }
+            }
+         s.close();
+            con.close();
+        } catch (SQLException e) {
+            log.error(e);
+            
+        }
+        return list;
+     }
+     
+     public ArrayList<String> findModels(String modelID, ArrayList<String> tissues,
+            ArrayList<String> diagnoses, ArrayList<String> tumorTypes,
+            ArrayList<String> tags, boolean treatmentNaive){
+         
+         //tissues -->primary site (or)
+         //and
+         // diagnoses --> initial or clinical contains (or)
+         //and
+         // tags --> tag in
+         //and
+         // treatment --> if true treatmentnaive = yes 
+         
+         ArrayList<String> list = new ArrayList<>(); 
+        
+        
+        try {
+            
+            StringBuilder sql = new StringBuilder("select distinct modelid from pdxmodel where true ");
+            
+            if(!modelID.isEmpty()){
+                sql.append("and modelid = '").append(modelID).append("'");
+            }
+            if(!tissues.isEmpty()){
+                sql.append("and  primarysite in (");
+                sql.append(DAOUtils.collectionToString(tissues, ",", "'"));
+                sql.append(") ");
+            }
+            if(!diagnoses.isEmpty()){
+                sql.append("and  (intitaldiagnosis in (");
+                sql.append(DAOUtils.collectionToString(diagnoses, ",", "'"));
+                sql.append(") or ");
+                sql.append(" clinicaldiagnosis in (");
+                sql.append(DAOUtils.collectionToString(diagnoses, ",", "'"));
+                sql.append(") ");
+            }
+            if(!tags.isEmpty()){
+                sql.append("and tag in (");
+                sql.append(DAOUtils.collectionToString(tags, ",", "'"));
+                sql.append(")");
+            }
+            
+            if(treatmentNaive){
+             sql.append(" and treatmentnaive = 'Yes'");
+            }
+            
+            
+            Connection con = getConnection();
+            PreparedStatement s = con.prepareStatement(sql.toString());
+            
+            
+            ResultSet r = s.executeQuery();
+            while(r.next()){
+                
+               list.add(r.getString(1));
+                
+            }
+         s.close();
+            con.close();
+        } catch (SQLException e) {
+            log.error(e);
+            
+        }
+        return list;
+     }
 
 }

@@ -53,6 +53,8 @@ public class PDXMouse {
     private HashMap<String, Double> tmb = new HashMap();
     
     private int socGraph = 0;
+    
+    private String mrn;
 
     public PDXMouse() {
 
@@ -591,5 +593,19 @@ public class PDXMouse {
             }
         }
         return false;
+    }
+
+    /**
+     * @return the mrn
+     */
+    public String getMrn() {
+        return mrn;
+    }
+
+    /**
+     * @param mrn the mrn to set
+     */
+    public void setMrn(String mrn) {
+        this.mrn = mrn;
     }
 }
