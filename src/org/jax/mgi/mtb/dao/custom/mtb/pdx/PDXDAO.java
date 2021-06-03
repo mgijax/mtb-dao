@@ -15,7 +15,7 @@ import org.apache.log4j.Logger;
 import org.jax.mgi.mtb.dao.utils.DAOUtils;
 
 /**
- * Manages PDX data in MTB for models' additional content Also Expression and
+ * Manages PDX data in MTB for models additional content Also Expression and
  * CNV data imported via the web services for performance
  *
  * @author sbn
@@ -930,7 +930,7 @@ public class PDXDAO {
                     " sampleType, tumorType, tumorMarkers, race, ethnicity, "+
                     " sampleSite, primarySite, stage, grade, modelStatus, tag, "+
                     " currentSmoker, formerSmoker, treatmentNaive, mrn) "+
-                    " values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+                    " values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
             for(PDXMouse mouse : mice){
                 s.setString(1, mouse.getModelID());
                 s.setString(2, mouse.getPreviousID());
