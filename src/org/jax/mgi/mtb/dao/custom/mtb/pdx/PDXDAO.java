@@ -10,9 +10,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import org.apache.log4j.Logger;
 import org.jax.mgi.mtb.dao.utils.DAOUtils;
+import org.jax.mgi.mtb.utils.StringUtils;
 
 /**
  * Manages PDX data in MTB for models additional content Also Expression and
@@ -714,8 +716,9 @@ public class PDXDAO {
             boolean official = false;
             boolean available = true;
             loop: while (rs.next()) {
-                
-                available = rs.getBoolean(3);
+           
+              // currently available means has variation so ignore
+         //       available = rs.getBoolean(3);
                 
                 if(rs.getString(1).equals(rs.getString(2))){
                     official = true;
@@ -823,7 +826,9 @@ public class PDXDAO {
             ctp = "and isctp ";
         }
        
-        String sql = "select symbol,display from humangenes where available and lower(display) like ? "+ctp+" order by display";
+        
+        // removed 'where available and ' to test now that 'available' appears to mean has variation data
+        String sql = "select symbol,display from humangenes where lower(display) like ? "+ctp+" order by display";
 
         Connection con = null;
         PreparedStatement s = null;
@@ -882,7 +887,7 @@ public class PDXDAO {
       
         ResultSet rs = null;
 
-        StringBuilder sb = new StringBuilder();
+        
         try {
             con = getConnection();
 
@@ -935,11 +940,11 @@ public class PDXDAO {
                 s.setString(1, mouse.getModelID());
                 s.setString(2, mouse.getPreviousID());
                 s.setString(3, mouse.getInstitution());
-                s.setString(4, mouse.getTissue());
+                s.setString(4, capitalize(mouse.getTissue()));
                 s.setString(5, mouse.getSex());
                 s.setString(6, mouse.getAge());
-                s.setString(7, mouse.getInitialDiagnosis());
-                s.setString(8, mouse.getClinicalDiagnosis());
+                s.setString(7, capitalize(mouse.getInitialDiagnosis()));
+                s.setString(8, capitalize(mouse.getClinicalDiagnosis()));
                 s.setString(9, mouse.getStrain());
                 s.setString(10, mouse.getLocation());
                 s.setString(11, mouse.getSampleType());
@@ -948,7 +953,7 @@ public class PDXDAO {
                 s.setString(14, mouse.getRace());
                 s.setString(15, mouse.getEthnicity());
                 s.setString(16, mouse.getSampleSite());
-                s.setString(17, mouse.getPrimarySite());
+                s.setString(17, capitalize(mouse.getPrimarySite()));
                 s.setString(18, mouse.getStage());
                 s.setString(19, mouse.getGrade());
                 s.setString(20, mouse.getModelStatus());
@@ -1070,6 +1075,7 @@ public class PDXDAO {
             log.error(e);
             
         }
+        Collections.sort(list);
         return list;
      }
      public ArrayList<String> getPrimarySitesList(boolean forPublic){
@@ -1093,6 +1099,7 @@ public class PDXDAO {
             log.error(e);
             
         }
+        Collections.sort(list);
         return list;
      }
      
@@ -1119,6 +1126,7 @@ public class PDXDAO {
             log.error(e);
             
         }
+        Collections.sort(list);
         return list;
      }
      
@@ -1141,23 +1149,23 @@ public class PDXDAO {
             
             StringBuilder sql = new StringBuilder("select distinct modelid from pdxmodel where true ");
             
-            if(!modelID.isEmpty()){
+            if(modelID != null && !modelID.isEmpty()){
                 sql.append("and modelid = '").append(modelID).append("'");
             }
-            if(!tissues.isEmpty()){
+            if(tissues != null && !tissues.isEmpty()){
                 sql.append("and  primarysite in (");
                 sql.append(DAOUtils.collectionToString(tissues, ",", "'"));
                 sql.append(") ");
             }
-            if(!diagnoses.isEmpty()){
-                sql.append("and  (intitaldiagnosis in (");
+            if(diagnoses != null && !diagnoses.isEmpty()){
+                sql.append("and  (initialdiagnosis in (");
                 sql.append(DAOUtils.collectionToString(diagnoses, ",", "'"));
                 sql.append(") or ");
                 sql.append(" clinicaldiagnosis in (");
                 sql.append(DAOUtils.collectionToString(diagnoses, ",", "'"));
-                sql.append(") ");
+                sql.append(")) ");
             }
-            if(!tags.isEmpty()){
+            if(tags != null && !tags.isEmpty()){
                 sql.append("and tag in (");
                 sql.append(DAOUtils.collectionToString(tags, ",", "'"));
                 sql.append(")");
@@ -1187,4 +1195,11 @@ public class PDXDAO {
         return list;
      }
 
+     
+     private String capitalize(String in){
+         String first = (in.charAt(0)+"").toUpperCase();
+         return first+in.substring(1);
+         
+         
+     }
 }
