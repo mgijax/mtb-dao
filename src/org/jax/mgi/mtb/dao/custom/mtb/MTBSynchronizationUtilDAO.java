@@ -608,65 +608,86 @@ public class MTBSynchronizationUtilDAO extends MTBUtilDAO {
     public ArrayList<ArrayList<MarkerDTO>> getMarkersToSync() {
 
         ArrayList<ArrayList<MarkerDTO>> dtos = new ArrayList<ArrayList<MarkerDTO>>();
-
+        HashMap<String,MarkerDTO> mgiMarkers = new HashMap<>();
+        HashMap<String,MarkerDTO> mtbMarkers = new HashMap<>();
+        MarkerDAO mDAO = null;
         try {
 
             Connection mtbConn = getConnection();
             Connection mgiConn = getMGIConnection();
-            MarkerDAO mDAO = MarkerDAO.getInstance();
-            MarkerLabelDAO mlDAO = MarkerLabelDAO.getInstance();
-
+            mDAO = MarkerDAO.getInstance();
+            
+           
 
             String sql = "Select a.numericPart mgiId, a._object_Key mtbKey,"
-                    + " mk.name, mk.symbol, mk._marker_key from Accession a, "
-                    + " Marker mk where _mtbtypes_key = ? "
+                    + " mk.name, mk.symbol,ml.label from Accession a, "
+                    + " Marker mk left join  Markerlabel ml on ( "
+                    + " ml._marker_key = mk._Marker_key"
+                    + " and ml._labeltype_key = 'MY' )"
+                    +"  where _mtbtypes_key = ? "
                     + " and a._object_key = mk._marker_key "
-                    + " and a._siteinfo_key = 1"; // only look for MGI ids
+                    + " and a._siteinfo_key = 1" // only look for MGI ids
+                   
+                    + " order by mk._Marker_key";
             PreparedStatement ps = mtbConn.prepareStatement(sql);
             ps.setInt(1, MTB_MARKER_TYPE);
             ResultSet rs = ps.executeQuery();
+            
+            long mtbKey = 0;
+            long mgiKey = 0;
+            MarkerDTO aDTO = null;
+            ArrayList<String> mgiKeys = new ArrayList<>();
+            
+           
             while (rs.next()) {
-                MarkerDTO aDTO = mDAO.createMarkerDTO();
-                long mgiId = rs.getLong(1);
-                long mtbKey = rs.getLong(2);
-                aDTO.setMarkerKey(mtbKey);
-                aDTO.setName(rs.getString(3));
-                aDTO.setSymbol(rs.getString(4));
                 
-                List<MarkerLabelDTO> labels =  mlDAO.loadByWhere("where _labeltype_key = 'MY' and _marker_key = "+rs.getString(5));
-                DataBean bean = new DataBean();
-                ArrayList<String> synonyms = new ArrayList<>();
-                for(MarkerLabelDTO dto : labels){
-                    synonyms.add(dto.getLabel());
-                }
-                Collections.sort(synonyms);
-                bean.put("synonyms", synonyms);
-
-
-                aDTO.setDataBean(bean);
-                
-                
-
-                MarkerDTO bDTO = getMarkerFromMGI("MGI:" + mgiId, mgiConn);
-                if (bDTO == null && mgiId > 0) {
-                    bDTO = mDAO.createMarkerDTO();
-                    bDTO.setName("Marker Key " + mtbKey
-                            + " has accid MGI:" + mgiId + " which is not in MGI");
-                }
-                
-               
-                if (bDTO != null) {
-                    
-                   
-                    if (compareMarkers(aDTO, bDTO) != 0) {
-                        ArrayList<MarkerDTO> pair = new ArrayList<MarkerDTO>(2);
-                        pair.add(bDTO);
-                        pair.add(aDTO);
-                        dtos.add(pair);
+                if(mtbKey != rs.getLong(2)){
+                    if(aDTO != null){
+                        Collections.sort((ArrayList<String>)aDTO.getDataBean().get("synonyms"));
+                        mtbMarkers.put("MGI:"+mgiKey, aDTO);
                     }
-
+                    
+                    // create a new marker object
+                    aDTO = mDAO.createMarkerDTO();
+                    mgiKey = rs.getLong(1);
+                    mtbKey = rs.getLong(2);
+                    aDTO.setMarkerKey(mtbKey);
+                    aDTO.setName(rs.getString(3));
+                    aDTO.setSymbol(rs.getString(4));
+                    DataBean bean = new DataBean();
+                    ArrayList<String> synonyms = new ArrayList<>();
+               
+                    if(rs.getString(5) != null){
+                        synonyms.add(rs.getString(5));
+                    }
+                    bean.put("synonyms", synonyms);
+                    bean.put(MGI_MARKER_ID, "MGI:"+mgiKey);
+                    aDTO.setDataBean(bean);
+                    
+                }else{
+                    // we are iterating over multiple synonyms for the same marker
+                    ((ArrayList<String>)aDTO.getDataBean().get("synonyms")).add(rs.getString(5));
                 }
+                
             }
+             mtbMarkers.put("MGI:"+mgiKey, aDTO);
+           
+            StringBuilder keyList = new StringBuilder();
+            for(String key : mtbMarkers.keySet()){
+                
+                if(keyList.length()==0){
+                    keyList.append("('").append(key).append("')");
+                }else{
+                    keyList.append(",('").append(key).append("')");
+                }
+                
+                
+            }
+            mgiKeys.add(keyList.toString());
+            
+           mgiMarkers = getMGIMarkers(mgiKeys,mgiConn);
+            
+            
 
             rs.close();
             ps.close();
@@ -676,9 +697,147 @@ public class MTBSynchronizationUtilDAO extends MTBUtilDAO {
         } catch (Exception e) {
             log.error(e);
         }
+        
+        
+        
+        for(String mgiKey : mtbMarkers.keySet()){
+            
+        
+            MarkerDTO aDTO = mtbMarkers.get(mgiKey);
+                // we have all the data for the previous marker
+                MarkerDTO bDTO = mgiMarkers.get(mgiKey);
+                
+                if (bDTO == null) {
+                    bDTO = mDAO.createMarkerDTO();
+                    bDTO.setName("Marker Key " + aDTO.getMarkerKey()
+                            + " has accid " + mgiKey + " which is not in MGI");
+                }
+
+
+                if (bDTO != null) {
+                    if(!mgiKey.equals((String)bDTO.getDataBean().get(MGI_MARKER_ID))){
+                        System.out.println("MISMATCH!" +mgiKey+":"+(String)bDTO.getDataBean().get(MGI_MARKER_ID));
+                        
+                    }
+                    if (compareMarkers(aDTO, bDTO) != 0) {
+                        ArrayList<MarkerDTO> pair = new ArrayList<MarkerDTO>(2);
+                        Collections.sort(((ArrayList<String>)aDTO.getDataBean().get("synonyms")));
+                        pair.add(bDTO);
+                        pair.add(aDTO);
+                        dtos.add(pair);
+                    }
+                }
+            
+        
+        }
 
         return dtos;
 
+    }
+    
+    private HashMap<String,MarkerDTO> getMGIMarkers(ArrayList<String> markerKeys,Connection conn){
+        HashMap<String,MarkerDTO> mgiMarkers = new HashMap<>();
+        
+
+        Statement stmt = null;
+        ResultSet rs = null;
+       
+
+        try {
+            
+             stmt = conn.createStatement();
+             stmt.addBatch("create temporary table marker_keys (key text)");
+             for(String keyList: markerKeys){
+             stmt.addBatch("insert into marker_keys values "+keyList+"");
+             }
+             stmt.executeBatch();
+            
+
+            StringBuffer query = new StringBuffer();
+            query.append("select m._Marker_key, m.name, m.symbol, t.name, c.chromosome, o.commonName, ac.accID, ml.label ").append(EOL);
+            query.append("  from MRK_Marker m left join MRK_Label ml on ").append(EOL);
+            query.append(" ( ml._marker_key = m._marker_key").append(EOL);
+            query.append("   and ml._orthologorganism_key is null").append(EOL);
+            query.append("   and ml._organism_key = 1 ").append(EOL);
+            query.append("   and ml.labeltype = 'MY'),  ").append(EOL);
+            query.append("       MRK_Types t, ").append(EOL);
+            query.append("       MRK_Chromosome c, ").append(EOL);
+            query.append("       MGI_Organism o, ").append(EOL);
+            query.append("       ACC_Accession ac, ").append(EOL);
+            query.append("       marker_keys mk ").append(EOL);
+            query.append(" where m._Marker_key = ac._Object_key ").append(EOL);
+            query.append("   and m._Marker_Type_key = t._Marker_Type_key ").append(EOL);
+            query.append("   and m.chromosome = c.chromosome ").append(EOL);
+            query.append("   and c._Organism_key = m._Organism_key ").append(EOL);
+            query.append("   and m._Organism_key = o._Organism_key ").append(EOL);
+            query.append("   and ac._MGIType_key = 2 ").append(EOL);
+            query.append("   and ac._LogicalDB_key = 1 ").append(EOL);
+            query.append("   and ac.private = 0 ").append(EOL);
+            query.append("   and ac.accid like 'MGI:%' ").append(EOL);
+            query.append("   and ac.accid = mk.key order by m._marker_key ").append(EOL);
+           
+
+            stmt = conn.createStatement();
+            rs = stmt.executeQuery(query.toString());
+            
+            String markerKey = null;
+            MarkerDTO dtoMarker = null;
+           
+            while (rs.next()) {
+                
+                if(!rs.getString(7).equals(markerKey)){
+                   
+                    if(dtoMarker != null){
+                       Collections.sort((ArrayList<String>)dtoMarker.getDataBean().get("synonyms"));
+                        mgiMarkers.put(markerKey, dtoMarker);
+                    }
+                    
+                    
+                    dtoMarker = MarkerDAO.getInstance().createMarkerDTO();
+                    ArrayList<String> synonyms = new ArrayList<>();
+                    
+                    markerKey = rs.getString(7);
+
+                    dtoMarker.setName(rs.getString(2));
+                    dtoMarker.setSymbol(rs.getString(3));
+
+                    DataBean dtoS = dtoMarker.getDataBean();
+                    dtoS.put(MGI_MARKER_TYPE, rs.getString(4));
+                    dtoS.put(MGI_CHROMOSOME_ORGANISM, rs.getString(5) + " - " + rs.getString(6));
+                    dtoS.put(MGI_MARKER_ID, rs.getString(7));
+                    dtoMarker.setDataBean(dtoS);
+                    if(rs.getString(8) != null){
+                        synonyms.add(rs.getString(8));
+                    }
+                    dtoMarker.getDataBean().put("synonyms", synonyms);
+                    
+
+                }else{
+                    ((ArrayList<String>)dtoMarker.getDataBean().get("synonyms")).add(rs.getString(8));
+                }
+                
+                
+            }
+            
+             mgiMarkers.put(markerKey, dtoMarker);
+            
+        } catch (SQLException ex) {
+            log.error(ex);
+
+        } catch (Exception e) {
+
+            log.error(e);
+
+        } finally {
+            close(stmt, rs);
+
+        }
+       
+       
+        
+        
+    
+        return mgiMarkers;
     }
     
     // labels are updated when synching
@@ -972,7 +1131,9 @@ public class MTBSynchronizationUtilDAO extends MTBUtilDAO {
                 return -1;
             }
             ArrayList<String> synonyms1 = (ArrayList<String>)dto1.getDataBean().get("synonyms");
+            
             ArrayList<String> synonyms2 = (ArrayList<String>)dto2.getDataBean().get("synonyms");
+            
             // dto1 is mtb dto2 is mgi
             // don't worry about cases where mtb has all and more synonyms than mgi
             if(synonyms1.size() >= synonyms2.size()){
