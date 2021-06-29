@@ -15,18 +15,14 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import org.apache.log4j.Logger;
 import org.jax.mgi.mtb.dao.gen.mtb.AlleleDAO;
 import org.jax.mgi.mtb.dao.gen.mtb.AlleleDTO;
 import org.jax.mgi.mtb.dao.gen.mtb.MarkerDAO;
 import org.jax.mgi.mtb.dao.gen.mtb.MarkerDTO;
-import org.jax.mgi.mtb.dao.gen.mtb.MarkerLabelDAO;
-import org.jax.mgi.mtb.dao.gen.mtb.MarkerLabelDTO;
 import org.jax.mgi.mtb.dao.gen.mtb.ReferenceDTO;
 import org.jax.mgi.mtb.dao.mtb.MTBUtilDAO;
 import org.jax.mgi.mtb.utils.DataBean;
-import org.jax.mgi.mtb.utils.LabelValueBean;
 
 /**
  * A <code>MTBUtilDAO</code> which performs operations for synchronizing the MTB data.
@@ -484,8 +480,9 @@ public class MTBSynchronizationUtilDAO extends MTBUtilDAO {
             close(stmt, rs);
 
         }
-        dtoMarker.getDataBean().put("synonyms",synonyms);
-        
+        if(dtoMarker != null){
+            dtoMarker.getDataBean().put("synonyms",synonyms);
+        }
         return dtoMarker;
     }
 
@@ -530,17 +527,14 @@ public class MTBSynchronizationUtilDAO extends MTBUtilDAO {
      */
     public ArrayList<ArrayList<AlleleDTO>> getAllelesToSync() {
 
-        ArrayList<ArrayList<AlleleDTO>> dtos = new ArrayList<ArrayList<AlleleDTO>>();
+        ArrayList<ArrayList<AlleleDTO>> dtos = new ArrayList<>();
 
-
+        HashMap<Long,AlleleDTO> alleles = new HashMap<>();
+        StringBuilder mgiIDs = new StringBuilder();
         try {
-
             Connection mtbConn = getConnection();
-            Connection mgiConn = getMGIConnection();
-            Connection noteConn = getMGIConnection();
-
+           
             AlleleDAO aDAO = AlleleDAO.getInstance();
-
 
             String sql = "Select a.numericPart mgiId, a._object_Key mtbKey,"
                     + " al.name,al.note,al.symbol "
@@ -559,15 +553,31 @@ public class MTBSynchronizationUtilDAO extends MTBUtilDAO {
                 mtbDTO.setNote(rs.getString(4));
                 mtbDTO.setSymbol(rs.getString(5));
 
-                AlleleDTO mgiDTO = this.getAlleleFromMGI("MGI:" + mgiId, mgiConn, noteConn);
-                if (mgiDTO == null && mgiId > 1) {
+                alleles.put(mgiId,mtbDTO);
+                if(mgiIDs.length() ==0){
+                    mgiIDs.append("(").append(mgiId).append(")");
+                }else{
+                    mgiIDs.append(",(").append(mgiId).append(")");
+                }
+            }
+            
+            
+            HashMap<Long,AlleleDTO> mgiAlleles = this.getMGIAlleles(mgiIDs.toString());
+            
+            for(Long mgiId : alleles.keySet()){
+                AlleleDTO mtbDTO = alleles.get(mgiId);
+                AlleleDTO mgiDTO = mgiAlleles.get(mgiId);
+            
+                if (mgiDTO == null && ( !mtbDTO.getName().toLowerCase().contains("trans"))
+                        && !mtbDTO.getName().toLowerCase().contains("targeted mutation")) {
                     mgiDTO = aDAO.createAlleleDTO();
                     mgiDTO.setName("");
-                    mgiDTO.setNote("!!!!\nMTB Allele key:" + mtbKey
-                            + " has accId MGI:" + mgiId + " \nWhich does not exist in MGI.\n!!!!");
+                    mgiDTO.setNote("!!!!\nMTB Allele key:" + mtbDTO.getAlleleKey()
+                            + " has accId MGI:" + mgiId + " \nWhich does not exist in the public MGI.\n!!!!");
                     mgiDTO.setSymbol("");
                     DataBean dBean = mgiDTO.getDataBean();
-                    dBean.put(MGI_ALLELE_STATUS_DELETED, new Boolean(false));
+                    dBean.put(MGI_ALLELE_STATUS_DELETED, false);
+                    
                 }
                 if (mgiDTO != null) {
 
@@ -581,27 +591,22 @@ public class MTBSynchronizationUtilDAO extends MTBUtilDAO {
                         dtos.add(pair);
                     }
                 }
-
-
             }
+            
             rs.close();
             ps.close();
-
             freeConnection(mtbConn);
-            closeConnection(mgiConn);
-            closeConnection(noteConn);
+          
         } catch (Exception e) {
             log.error(e);
         }
-
         return dtos;
-
     }
 
     /**
      * For every marker in MTB with an MGI accession ID
-     * retrieves the corresponding MGI marker and compares them
-     * based on name and symbol. Any markers that don't match 
+     * check the corresponding MGI marker, compare them
+     * based on name and symbol and labels/synonyms. Any markers that don't match 
      * are returned as pairs
      * @return ArrayList<ArrayList<MarkerDTO>> A list of pairs of non matching Markers
      */
@@ -702,7 +707,6 @@ public class MTBSynchronizationUtilDAO extends MTBUtilDAO {
         
         for(String mgiKey : mtbMarkers.keySet()){
             
-        
             MarkerDTO aDTO = mtbMarkers.get(mgiKey);
                 // we have all the data for the previous marker
                 MarkerDTO bDTO = mgiMarkers.get(mgiKey);
@@ -715,10 +719,7 @@ public class MTBSynchronizationUtilDAO extends MTBUtilDAO {
 
 
                 if (bDTO != null) {
-                    if(!mgiKey.equals((String)bDTO.getDataBean().get(MGI_MARKER_ID))){
-                        System.out.println("MISMATCH!" +mgiKey+":"+(String)bDTO.getDataBean().get(MGI_MARKER_ID));
-                        
-                    }
+                    
                     if (compareMarkers(aDTO, bDTO) != 0) {
                         ArrayList<MarkerDTO> pair = new ArrayList<MarkerDTO>(2);
                         Collections.sort(((ArrayList<String>)aDTO.getDataBean().get("synonyms")));
@@ -987,115 +988,124 @@ public class MTBSynchronizationUtilDAO extends MTBUtilDAO {
         }
         return note.toString().trim();
     }
-    private static final String FEATURE_DAG = "select distinct "
-            + " 'head' as parent, 0 as _Parent_key, t.term as child, p._Label_key, "
-            + " cc.markerCount, p._Object_key as _Term_key, 1 as sequenceNum "
-            + "from DAG_Closure c, VOC_Term t, MRK_MCV_Count_Cache cc, DAG_Node p, DAG_Edge d "
-            + "where c._DAG_key = 9 "
-            + "and not exists (select 1 from DAG_Closure c2 "
-            + " where c2._DAG_key = 9 "
-            + " and c2._Descendent_key = c._Ancestor_key) "
-            + "and c._AncestorObject_key = t._Term_key "
-            + "and c._AncestorObject_key = cc._MCVTerm_key "
-            + "and c._Ancestor_key = d._Parent_key "
-            + "and c._Ancestor_key = p._Node_key "
-            + "UNION "
-            + "select distinct pt.term as parent, d._Parent_key, ct.term as child, "
-            + " c._Label_key, cc.markerCount, ct._Term_key, d.sequenceNum "
-            + "from DAG_Edge d, DAG_Node p, DAG_Node c, VOC_Term pt, VOC_Term ct, "
-            + " MRK_MCV_Count_Cache pc, MRK_MCV_Count_Cache cc "
-            + "where d._DAG_key = 9 "
-            + "and d._Parent_key = p._Node_key "
-            + "and p._Object_key = pt._Term_key "
-            + "and p._Object_key = pc._MCVTerm_key "
-            + "and d._Child_key = c._Node_key "
-            + "and c._Object_key = ct._Term_key "
-            + "and c._Object_key = cc._MCVTerm_key "
-            + "order by _Parent_key, sequenceNum";
-
-    /**
-     * Queries MGD for FeatureType terms
-     * Builds a JSON string to create a tree of EXT checkbox definitions
-     * @return String JSON for Feature Types
-     */
-    public String getFeatureTypeJSON() {
-        String json = "";
-
-        StringBuffer note = new StringBuffer();
-        Connection conn = null;
+    
+     private HashMap<Long,AlleleDTO> getMGIAlleles(String ids) {
+        StringBuilder note = new StringBuilder();
         Statement stmt = null;
         ResultSet rs = null;
-
+        Connection conn = null;
+        
+        HashMap<Long,AlleleDTO> alleles = new HashMap<>();
+        HashMap<Long,String> notes = new HashMap<>();
         try {
             conn = getMGIConnection();
+            
             stmt = conn.createStatement();
-            rs = stmt.executeQuery(FEATURE_DAG);
+            stmt.addBatch("create temporary table allele_ids (id integer)");
+            stmt.addBatch("insert into allele_ids values "+ids);
+            stmt.addBatch("create index on allele_ids (id)");
+            
+            stmt.executeBatch();
+            
+            StringBuilder query = new StringBuilder();
+            query.append("select al._allele_key, nc.note ").append(EOL);
+            query.append("  from ALL_Allele al left join (MGI_Note n left join MGI_NoteChunk nc on (n._Note_key = nc._Note_key)) ");
+            query.append(" on (al._Allele_key = n._Object_key), ").append(EOL);
+            query.append("       ACC_Accession ac, allele_ids ").append(EOL);
+            query.append(" where al._Allele_key = ac._Object_key ").append(EOL);
+            query.append("   and n._NoteType_key = 1021 ").append(EOL);
+            query.append("   and n._MGIType_key = 11 ").append(EOL);
+            query.append("   and ac._MGIType_key = 11 ").append(EOL);
+            query.append("   and ac._LogicalDB_key = 1 ").append(EOL);
+            query.append("   and ac.private = 0 ").append(EOL);
+            query.append("   and ac.numericpart = allele_ids.id ").append(EOL);
+            query.append("   order by nc.sequenceNum ").append(EOL);
 
+            rs = stmt.executeQuery(query.toString());
 
-            LinkedHashMap items = new LinkedHashMap();
-            String parent = "";
-            HashMap<String, String> children;
-
-            String data;
-
+            String chunk;
+            long key = 0;
             while (rs.next()) {
-
-
-                parent = rs.getString(1);
-
-                if (parent != null && !"".equals(parent)) {
-                    if (items.containsKey(parent)) {
-                        children = (HashMap<String, String>) items.get(parent);
-                    } else {
-                        children = new HashMap<String, String>();
-                        items.put(parent, children);
-                    }
-
-                    data = "{text:'" + rs.getString(3) + "',checked:false, iconCls:'no-icon',id:'" + rs.getString(6) + "'";
-
-                    children.put(rs.getString(7), data);
+                if(rs.getLong(1) != key){
+                    notes.put(key, note.toString());
+                    note = new StringBuilder(); 
+                    key = rs.getLong(1);
+                    
+                }
+                chunk = rs.getString(2);
+                if (chunk.trim().length() < 255) {
+                    // chunks that end w/ trailing spaces have them removed
+                    // if a chunk is less than 255 chars it may have a missing space
+                    note.append(chunk).append(" ");
+                } else {
+                    note.append(chunk);
                 }
             }
-            close(stmt, rs);
-            closeConnection(conn);
+            notes.put(key,note.toString());
+            
+            
+            query = new StringBuilder();
+            
+            query.append("select distinct al._Allele_key, al.name, al.symbol, v.term, ").append(EOL);
+            query.append("        al._allele_status_key, ac.numericpart ").append(EOL);
+            query.append("  from ALL_Allele al, ").append(EOL);
+            query.append("       ACC_Accession ac, ").append(EOL);
+            query.append("       VOC_Term v, allele_ids ").append(EOL);
+            query.append(" where al._Allele_key = ac._Object_key ").append(EOL);
+            query.append("   and al._Allele_Type_key = v._Term_key ").append(EOL);
+            query.append("   and ac._MGIType_key = 11 ").append(EOL);
+            query.append("   and ac._LogicalDB_key = 1 ").append(EOL);
+            query.append("   and ac.private = 0 ").append(EOL);
+            query.append("   and v._Vocab_key = 38 ").append(EOL);
+            query.append("   and ac.numericpart = allele_ids.id" ).append(EOL);
 
-            children = (HashMap<String, String>) items.get("head");
-            json = "[" + buildJson(json, children, items);
+            
+            rs = stmt.executeQuery(query.toString());
 
-            // remove a trailing '}\n'
-            json = json.substring(0, json.length() - 2);
 
+            while (rs.next()) {
+               
+                AlleleDTO dtoAllele = AlleleDAO.getInstance().createAlleleDTO();
+                key = rs.getLong(1);
+
+                dtoAllele.setName(rs.getString(2));
+                dtoAllele.setSymbol(rs.getString(3));
+
+                if(notes.get(key) != null){
+                    dtoAllele.setNote(notes.get(key));
+                }
+                DataBean dtoS = dtoAllele.getDataBean();
+                dtoS.put(MGI_ALLELE_TYPE, rs.getString(4));
+
+                if (rs.getInt(5) == DELETED_ALLELE_STATUS_KEY) {
+                    dtoS.put(MGI_ALLELE_STATUS_DELETED, true);
+                } else {
+                    dtoS.put(MGI_ALLELE_STATUS_DELETED, false);
+                }
+                dtoAllele.setDataBean(dtoS);
+                
+                alleles.put(rs.getLong(6),dtoAllele);
+                
+            }
+            
+         
+            rs.close();
+            stmt.clearBatch();
+            conn.close();
+        } catch (SQLException ex) {
+            log.error(ex);
         } catch (Exception e) {
             log.error(e);
+        } finally {
+            close(stmt, rs);
+
         }
-
-
-        return json;
+        return alleles;
     }
-
-    private String buildJson(String json, HashMap<String, String> children, LinkedHashMap items) {
-
-        for (int i = 1; i <= children.size(); i++) {
-            String data = children.get(i + "");
-            String term = data.substring(7, data.indexOf("'", 8));
-            json = json + data;
-            HashMap<String, String> gChildren = (HashMap<String, String>) items.get(term);
-            if (gChildren != null) {
-                json = json + ",leaf:false,children:[";
-                json = buildJson(json, gChildren, items);
-            } else {
-                json = json + ",leaf:true}";
-            }
-            if (i < (children.size())) {
-                json = json + ",\n";
-            } else {
-                json = json + "]}\n";
-            }
-        }
-
-        return json;
-
-    }
+    
+    
+    
+   
 
     /**
      * Converts mgi superscript notation to mtb (html)
