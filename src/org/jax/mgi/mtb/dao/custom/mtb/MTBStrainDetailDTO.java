@@ -139,9 +139,8 @@ public class MTBStrainDetailDTO {
     private void consolidateGenetics(){
         HashMap<String,MTBStrainGeneticsDTO> map = new HashMap<>();
         Iterator i = this.genetics.iterator();
-        while(i.hasNext()){
-            MTBStrainGeneticsDTO dto = (MTBStrainGeneticsDTO) i.next();
-            map.put(dto.getMarkerId()+""+dto.getAllelePairId(),dto);
+        for(MTBStrainGeneticsDTO dto : this.genetics){
+            map.put(dto.getAllelePairId()+"",dto);
         }
         this.consolidatedGenetics = map.values();
     }

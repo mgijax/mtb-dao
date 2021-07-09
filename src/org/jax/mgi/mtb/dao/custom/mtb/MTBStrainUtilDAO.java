@@ -45,159 +45,157 @@ import org.jax.mgi.mtb.utils.Timer;
  * @author mjv
  * @date 2007/04/30 15:47:20
  * @version 1.1
- * @cvsheader /mgi/cvsroot/mgi/mtb/mtbdao/src/org/jax/mgi/mtb/dao/custom/mtb/MTBStrainUtilDAO.java,v 1.1 2007/04/30 15:47:20 mjv Exp
+ * @cvsheader
+ * /mgi/cvsroot/mgi/mtb/mtbdao/src/org/jax/mgi/mtb/dao/custom/mtb/MTBStrainUtilDAO.java,v
+ * 1.1 2007/04/30 15:47:20 mjv Exp
  */
 public class MTBStrainUtilDAO extends MTBUtilDAO {
 
     // -------------------------------------------------------------- Constants
-
     public static final int ID_STRAIN_ID = 0;
     public static final int ID_STRAIN_NAME = 1;
     public static final int ID_STRAIN_TYPE = 2;
 
-    private final int SITE_ID_LOTHAR  = 100;
-    private final int SITE_ID_NCIMR   = 101;
+    private final int SITE_ID_LOTHAR = 100;
+    private final int SITE_ID_NCIMR = 101;
     private final int SITE_ID_CARDIFF = 102;
     private final String COLLECTION_LINKS = "links";
     private final String COLLECTION_LINKS_GENERAL = "linksGeneral";
 
-   
-    private static final String SQL_ACCESSION_BY_STRAIN_KEY =
-         "select accId " +
-         "  from Accession " +
-         " where _Object_key = ? " +
-         "   and _MTBTypes_key = 1";
-    
-    private final static String SQL_ASSOCIATED_TUMORS =
-            "select tf._TumorFrequency_key, " +
-            "       coalesce((select _Parent_key from TumorProgression where _Child_key = tf._TumorFrequency_key and _TumorProgressionType_key = 1), tf._TumorFrequency_key) _Parent_key, " +
-            "       (select count(1) from TumorFrequencyTreatments where _TumorFrequency_key = tft._TumorFrequency_key) numAgents, " +
-            "       case when (select _Parent_key from TumorProgression where _Child_key = tf._TumorFrequency_key and _TumorProgressionType_key = 1) is null then 0 else 1 end metastasis, " +
-            "       (select count(1) from TumorPathologyAssoc a, PathologyImages pi, Images i where a._Pathology_key = pi._Pathology_key and  pi._images_key = i._images_key and i.privateFlag = 0 and a._TumorFrequency_key = tf._TumorFrequency_key) numImages, " +
-            "       oo._Organ_key organOriginKey, " +
-            "       oo.name organOriginName, " +
-            "       tc._TumorClassification_key, " +
-            "       tc.name tumorClassName, " +
-            "       oo.name || ' ' || tc.name tumorName, " +
-            "       s._Strain_key, " +
-            "       s.name strainName, " +
-            "       tf._Sex_key, " +
-            "       tf.incidence, " +
-            "       oa.name organAffectedName, " +
-            "       aty.name treatmentType, " +
-            "       a._Agent_key, " +
-            "       a.name agentName, " +
-            "       acc.accId, " +
-            "       rf.shortCitation, " +
-            "       (select count(1)  from AssayImages ai, TmrGntcCngAssayImageAssoc tgca, TumorGeneticChanges tgc where tgc._TumorGeneticChanges_key = tgca._TumorGeneticChanges_key and ai._assayimages_key = tgca._assayimages_key and ai.privateFlag !=1 and tgc._tumorfrequency_key = tf._tumorfrequency_key) cytoImages " +
-            "   from TumorFrequency tf left join " +
-            "       ( TumorFrequencyTreatments tft join Agent a on ( tft._Agent_key = a._Agent_key ) " +
-			      "        join AgentType aty on ( a._AgentType_key = aty._AgentType_key )) " +
-            "        on ( tf._TumorFrequency_key = tft._TumorFrequency_key ), " +
-            "       TumorType tt, " +
-            "       TumorClassification tc, " +
-            "       Strain s, " +
-            "       Accession acc, " +
-            "       Organ oa, " +
-            "       Organ oo, " +
-            "       Reference rf " +
-            " where tf._TumorType_key = tt._TumorType_key " +
-            "   and tt._TumorClassification_key = tc._TumorClassification_key " +
-            "   and tt._Organ_key = oo._Organ_key " +
-            "   and tf._Reference_key = acc._Object_key " +
-            "   and tf._Reference_key = rf._reference_key " +
-            "   and acc._SiteInfo_key = 1 " +
-            "   and acc._MTBTypes_key = 6 " +
-            "   and tf._Strain_key = s._Strain_key " +
-            "   and tf._OrganAffected_key = oa._Organ_key " +
-            "   and tf._Strain_key = ?" +
-            " order by metastasis, _Parent_key, oo.name, tc.name, oa.name, _tumorfrequency_key, treatmenttype";
+    private static final String SQL_ACCESSION_BY_STRAIN_KEY
+            = "select accId "
+            + "  from Accession "
+            + " where _Object_key = ? "
+            + "   and _MTBTypes_key = 1";
 
-    private final static String SQL_STRAIN_REFERENCES =
-            "select r._Reference_key, r.shortCitation, a.accId " +
-            "  from StrainReferences sr, Reference r, Accession a " +
-            " where a._Object_key = r._Reference_key " +
-            "   and a._MTBTypes_key = 6 " +
-            "   and sr._Reference_key = r._Reference_key " +
-            "   and sr._Strain_key = ? " +
-            " order by r.year desc, r.shortCitation";
+    private final static String SQL_ASSOCIATED_TUMORS
+            = "select tf._TumorFrequency_key, "
+            + "       coalesce((select _Parent_key from TumorProgression where _Child_key = tf._TumorFrequency_key and _TumorProgressionType_key = 1), tf._TumorFrequency_key) _Parent_key, "
+            + "       (select count(1) from TumorFrequencyTreatments where _TumorFrequency_key = tft._TumorFrequency_key) numAgents, "
+            + "       case when (select _Parent_key from TumorProgression where _Child_key = tf._TumorFrequency_key and _TumorProgressionType_key = 1) is null then 0 else 1 end metastasis, "
+            + "       (select count(1) from TumorPathologyAssoc a, PathologyImages pi, Images i where a._Pathology_key = pi._Pathology_key and  pi._images_key = i._images_key and i.privateFlag = 0 and a._TumorFrequency_key = tf._TumorFrequency_key) numImages, "
+            + "       oo._Organ_key organOriginKey, "
+            + "       oo.name organOriginName, "
+            + "       tc._TumorClassification_key, "
+            + "       tc.name tumorClassName, "
+            + "       oo.name || ' ' || tc.name tumorName, "
+            + "       s._Strain_key, "
+            + "       s.name strainName, "
+            + "       tf._Sex_key, "
+            + "       tf.incidence, "
+            + "       oa.name organAffectedName, "
+            + "       aty.name treatmentType, "
+            + "       a._Agent_key, "
+            + "       a.name agentName, "
+            + "       acc.accId, "
+            + "       rf.shortCitation, "
+            + "       (select count(1)  from AssayImages ai, TmrGntcCngAssayImageAssoc tgca, TumorGeneticChanges tgc where tgc._TumorGeneticChanges_key = tgca._TumorGeneticChanges_key and ai._assayimages_key = tgca._assayimages_key and ai.privateFlag !=1 and tgc._tumorfrequency_key = tf._tumorfrequency_key) cytoImages "
+            + "   from TumorFrequency tf left join "
+            + "       ( TumorFrequencyTreatments tft join Agent a on ( tft._Agent_key = a._Agent_key ) "
+            + "        join AgentType aty on ( a._AgentType_key = aty._AgentType_key )) "
+            + "        on ( tf._TumorFrequency_key = tft._TumorFrequency_key ), "
+            + "       TumorType tt, "
+            + "       TumorClassification tc, "
+            + "       Strain s, "
+            + "       Accession acc, "
+            + "       Organ oa, "
+            + "       Organ oo, "
+            + "       Reference rf "
+            + " where tf._TumorType_key = tt._TumorType_key "
+            + "   and tt._TumorClassification_key = tc._TumorClassification_key "
+            + "   and tt._Organ_key = oo._Organ_key "
+            + "   and tf._Reference_key = acc._Object_key "
+            + "   and tf._Reference_key = rf._reference_key "
+            + "   and acc._SiteInfo_key = 1 "
+            + "   and acc._MTBTypes_key = 6 "
+            + "   and tf._Strain_key = s._Strain_key "
+            + "   and tf._OrganAffected_key = oa._Organ_key "
+            + "   and tf._Strain_key = ?"
+            + " order by metastasis, _Parent_key, oo.name, tc.name, oa.name, _tumorfrequency_key, treatmenttype";
 
-    private final static String SQL_STRAIN_SYNONYMS =
-            "select ss._StrainSynonyms_key, ss._Strain_key, ss._Reference_key, ss.name, a.accId " +
-            "  from StrainSynonyms ss, Accession a " +
-            " where a._Object_key = ss._Reference_key " +
-            "   and a._MTBTypes_key = 6 " +
-            "   and ss._Strain_key = ? " +
-            " order by ss.name";
+    private final static String SQL_STRAIN_REFERENCES
+            = "select r._Reference_key, r.shortCitation, a.accId "
+            + "  from StrainReferences sr, Reference r, Accession a "
+            + " where a._Object_key = r._Reference_key "
+            + "   and a._MTBTypes_key = 6 "
+            + "   and sr._Reference_key = r._Reference_key "
+            + "   and sr._Strain_key = ? "
+            + " order by r.year desc, r.shortCitation";
 
-    private final static String SQL_STRAIN_NOTES =
-            "select distinct sn._StrainNotes_key, sn._Strain_key, sn._Reference_key, sn.note, a.accId, r.shortCitation " +
-            "  from StrainNotes sn, Accession a, Reference r " +
-            " where a._Object_key = sn._Reference_key " +
-            "   and a._Object_key = r._reference_key " +
-            "   and a.prefixpart = 'J:' " +
-            "   and a._MTBTypes_key = 6 " +
-            "   and sn._Strain_key = ? " +
-            " order by sn._StrainNotes_key";
+    private final static String SQL_STRAIN_SYNONYMS
+            = "select ss._StrainSynonyms_key, ss._Strain_key, ss._Reference_key, ss.name, a.accId "
+            + "  from StrainSynonyms ss, Accession a "
+            + " where a._Object_key = ss._Reference_key "
+            + "   and a._MTBTypes_key = 6 "
+            + "   and ss._Strain_key = ? "
+            + " order by ss.name";
 
-    private final static String SQL_STRAIN_GENETICS =
-            "select distinct c.chromosome, o.commonName, m._Marker_key, " +
-            "       m.symbol, m.name, ap._Allele1_key, " +
-            "       (select symbol from Allele where _Allele_key = ap._Allele1_key) allele1Symbol, " +
-            "       (select iay.type from Allele ia, AlleleType iay where ia._AlleleType_key = iay._AlleleType_key and ia._Allele_key = ap._Allele1_key) allele1Type, " +
-            "       ap._Allele2_key, " +
-            "       (select symbol from Allele where _Allele_key = ap._Allele2_key) allele2Symbol, " +
-            "       (select iay.type from Allele ia, AlleleType iay where ia._AlleleType_key = iay._AlleleType_key and ia._Allele_key = ap._Allele2_key) allele2Type, " +
-            "       (select replace(sl.url,'@@@@',ai.accId) " +
-            "          from Accession ai, SiteInfo si, SiteLinks sl " +
-            "         where ai._Object_key = m._Marker_key " +
-            "           and ai._MTBTypes_key = 2  " +
-            "           and si._SiteInfo_key = 1  " +
-            "           and ai._SiteInfo_key = si._SiteInfo_key " +
-            "           and si._SiteInfo_key = sl._SiteLinks_key) markerUrl, " +
-            "       (select replace(sl.url, '@@@@', ai.accId)  " +
-            "          from Accession ai, SiteInfo si, SiteLinks sl " +
-            "         where ai._Object_key = ap._Allele1_key " +
-            "           and ai._MTBTypes_key = 3 " +
-            "           and si._SiteInfo_key = 1 " +
-            "           and ai._SiteInfo_key = si._SiteInfo_key " +
-            "           and si._SiteInfo_key = sl._SiteLinks_key) allele1Url, " +
-            "       (select replace (sl.url,'@@@@', ai.accId) " +
-            "          from Accession ai, SiteInfo si, SiteLinks sl " +
-            "         where ai._Object_key= ap._Allele2_key " +
-            "           and ai._MTBTypes_key = 3 " +
-            "           and si._SiteInfo_key = 1 " +
-            "           and ai._SiteInfo_key = si._SiteInfo_key " +
-            "           and si._SiteInfo_key = sl._SiteLinks_key) allele2Url, " +
-            "       g._Reference_key, " +
-            "       ap._AllelePair_key, " +
-            "       g._Genotype_key " +
-            "  from AllelePair ap, " +
-            "       Allele a, " +
-            "       AlleleMarkerAssoc ama, " +
-            "       Marker m, " +
-            "       Chromosome c, " +
-            "       Organism o, " +
-            "       Genotype g " +
-            " where ap._AllelePair_key = g._AllelePair_key " +
-            "   and g._Strain_key = ? " +
-            "   and a._Allele_key in (ap._Allele1_key, ap._Allele2_key) " +
-            "   and a._Allele_key = ama._Allele_key " +
-            "   and ama._Marker_key = m._Marker_key " +
-            "   and m._Chromosome_key = c._Chromosome_key " +
-            "   and c._Organism_key = o._Organism_key " +
-            "   and ama._AlleleMarkerAssocType_key in (1,3,4) " +  // exclude alleles that have no expressed component (key 2: Regulatory - Promoter)
+    private final static String SQL_STRAIN_NOTES
+            = "select distinct sn._StrainNotes_key, sn._Strain_key, sn._Reference_key, sn.note, a.accId, r.shortCitation "
+            + "  from StrainNotes sn, Accession a, Reference r "
+            + " where a._Object_key = sn._Reference_key "
+            + "   and a._Object_key = r._reference_key "
+            + "   and a.prefixpart = 'J:' "
+            + "   and a._MTBTypes_key = 6 "
+            + "   and sn._Strain_key = ? "
+            + " order by sn._StrainNotes_key";
+
+    private final static String SQL_STRAIN_GENETICS
+            = "select distinct c.chromosome, o.commonName, m._Marker_key, "
+            + "       m.symbol, m.name, ap._Allele1_key, "
+            + "       (select symbol from Allele where _Allele_key = ap._Allele1_key) allele1Symbol, "
+            + "       (select iay.type from Allele ia, AlleleType iay where ia._AlleleType_key = iay._AlleleType_key and ia._Allele_key = ap._Allele1_key) allele1Type, "
+            + "       ap._Allele2_key, "
+            + "       (select symbol from Allele where _Allele_key = ap._Allele2_key) allele2Symbol, "
+            + "       (select iay.type from Allele ia, AlleleType iay where ia._AlleleType_key = iay._AlleleType_key and ia._Allele_key = ap._Allele2_key) allele2Type, "
+            + "       (select replace(sl.url,'@@@@',ai.accId) "
+            + "          from Accession ai, SiteInfo si, SiteLinks sl "
+            + "         where ai._Object_key = m._Marker_key "
+            + "           and ai._MTBTypes_key = 2  "
+            + "           and si._SiteInfo_key = 1  "
+            + "           and ai._SiteInfo_key = si._SiteInfo_key "
+            + "           and si._SiteInfo_key = sl._SiteLinks_key) markerUrl, "
+            + "       (select replace(sl.url, '@@@@', ai.accId)  "
+            + "          from Accession ai, SiteInfo si, SiteLinks sl "
+            + "         where ai._Object_key = ap._Allele1_key "
+            + "           and ai._MTBTypes_key = 3 "
+            + "           and si._SiteInfo_key = 1 "
+            + "           and ai._SiteInfo_key = si._SiteInfo_key "
+            + "           and si._SiteInfo_key = sl._SiteLinks_key) allele1Url, "
+            + "       (select replace (sl.url,'@@@@', ai.accId) "
+            + "          from Accession ai, SiteInfo si, SiteLinks sl "
+            + "         where ai._Object_key= ap._Allele2_key "
+            + "           and ai._MTBTypes_key = 3 "
+            + "           and si._SiteInfo_key = 1 "
+            + "           and ai._SiteInfo_key = si._SiteInfo_key "
+            + "           and si._SiteInfo_key = sl._SiteLinks_key) allele2Url, "
+            + "       g._Reference_key, "
+            + "       ap._AllelePair_key, "
+            + "       g._Genotype_key "
+            + "  from AllelePair ap, "
+            + "       Allele a, "
+            + "       AlleleMarkerAssoc ama, "
+            + "       Marker m, "
+            + "       Chromosome c, "
+            + "       Organism o, "
+            + "       Genotype g "
+            + " where ap._AllelePair_key = g._AllelePair_key "
+            + "   and g._Strain_key = ? "
+            + "   and a._Allele_key in (ap._Allele1_key, ap._Allele2_key) "
+            + "   and a._Allele_key = ama._Allele_key "
+            + "   and ama._Marker_key = m._Marker_key "
+            + "   and m._Chromosome_key = c._Chromosome_key "
+            + "   and c._Organism_key = o._Organism_key "
+            + "   and ama._AlleleMarkerAssocType_key in (1,3,4) "
+            + // exclude alleles that have no expressed component (key 2: Regulatory - Promoter)
             " order by symbol ";
 
-
     // ----------------------------------------------------- Instance Variables
-
     private static MTBStrainUtilDAO singleton = new MTBStrainUtilDAO();
-    private final static Logger log =
-            Logger.getLogger(MTBStrainUtilDAO.class.getName());
+    private final static Logger log
+            = Logger.getLogger(MTBStrainUtilDAO.class.getName());
 
     // ----------------------------------------------------------- Constructors
-
     /**
      * Creates a new instance of MTBStrainUtilDAO
      */
@@ -206,7 +204,6 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
     }
 
     // --------------------------------------------------------- Public Methods
-
     /**
      * Get the MTBStrainUtilDAO singleton.
      *
@@ -231,7 +228,7 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
             // get the strain information
             daoStrain = StrainDAO.getInstance();
             dtoStrain = daoStrain.loadByPrimaryKey(new Long(lKey));
-             dtoStrainDetail.setStrainKey(dtoStrain.getStrainKey().longValue());
+            dtoStrainDetail.setStrainKey(dtoStrain.getStrainKey().longValue());
             dtoStrainDetail.setName(dtoStrain.getName());
             dtoStrainDetail.setDescription(dtoStrain.getDescription());
 
@@ -246,7 +243,7 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
             dtoStrainDetail.setTypes(new ArrayList<StrainTypeDTO>(listStrainTypes));
             MTBStrainUtilDAO daoStrainUtil = MTBStrainUtilDAO.getInstance();
             dtoStrainDetail.setMtbId(daoStrainUtil.getAccessionId(lKey));
-            
+
         } catch (SQLException sqle) {
             log.error("Unable to retrieve strain information.", sqle);
         }
@@ -377,16 +374,16 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
     /**
      * Search for a strain.
      */
-    public SearchResults<MTBStrainSearchDTO> 
+    public SearchResults<MTBStrainSearchDTO>
             searchStrain(StrainSearchParams strainParams,
-                         String strOrderBy,
-                         long lMaxItems)
+                    String strOrderBy,
+                    long lMaxItems)
             throws NullPointerException, IllegalArgumentException, DAOException {
 
-        SearchResults<MTBStrainSearchDTO> resultWrapper = 
-                new SearchResults<MTBStrainSearchDTO>();
-        List<MTBStrainSearchDTO> arrStrains = 
-                new ArrayList<MTBStrainSearchDTO>();
+        SearchResults<MTBStrainSearchDTO> resultWrapper
+                = new SearchResults<MTBStrainSearchDTO>();
+        List<MTBStrainSearchDTO> arrStrains
+                = new ArrayList<MTBStrainSearchDTO>();
         Connection conn = null;
         ResultSet rs = null;
         Statement stmtSelect = null;
@@ -436,9 +433,8 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
 
             // name
             if (StringUtils.hasValue(strainParams.getStrainName())) {
-                
-              
-                sbSelect.insert(sbSelect.indexOf("from ")+5, " temp_name ttn, ");
+
+                sbSelect.insert(sbSelect.indexOf("from ") + 5, " temp_name ttn, ");
                 sbSelect.append("and s._Strain_key = ttn._Strain_key ").append(EOL);
 
                 StringBuffer sbNameSelect = new StringBuffer();
@@ -453,24 +449,21 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
                 sbNameSelect.append(" where ").append(DAOUtils.formatCondition("name", strainParams.getStrainNameComparison(), strainParams.getStrainName(), "'"));
                 sbNameSelect.append(" or ").append(DAOUtils.formatCondition("replace(replace(replace(replace(name,'<sup>',''),'</sup>',''),'<i>',''),'</i>','')", strainParams.getStrainNameComparison(), strainParams.getStrainName(), "'"));
 
-                
                 log.debug(sbNameSelect.toString());
-                
 
                 stmtBatch.addBatch(sbNameSelect.toString());
             }
 
             // allelepair key
             if (strainParams.getAllelePairKey() > 0) {
-                sbSelect.insert(sbSelect.indexOf("from ")+5, " Genotype gt, ");
+                sbSelect.insert(sbSelect.indexOf("from ") + 5, " Genotype gt, ");
                 sbSelect.append("and  s._Strain_key = gt._Strain_key and gt._AllelePair_key = ").append(strainParams.getAllelePairKey()).append(EOL);
             }
 
             // reference key
             if (strainParams.getReferenceKey() != 0) {
-               
-              
-                sbSelect.insert(sbSelect.indexOf("from ")+5, " temp_ref ttr, ");
+
+                sbSelect.insert(sbSelect.indexOf("from ") + 5, " temp_ref ttr, ");
                 sbSelect.append("and s._Strain_key = ttr._Strain_key ").append(EOL);
 
                 StringBuffer sbRef = new StringBuffer();
@@ -487,15 +480,14 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
                 sbRef.append("  from StrainNotes ").append(EOL);
                 sbRef.append(" where _Reference_key = ").append(strainParams.getReferenceKey());
 
-                
                 log.debug(sbRef.toString());
-                
+
                 stmtBatch.addBatch(sbRef.toString());
             }
 
             // genetic name SQL Injection
             if (StringUtils.hasValue(strainParams.getGeneticName())) {
-                sbSelect.insert(sbSelect.indexOf("from ")+5, " temp_genetic_name tgn, ");
+                sbSelect.insert(sbSelect.indexOf("from ") + 5, " temp_genetic_name tgn, ");
                 sbSelect.append("and s._Strain_key = tgn._Strain_key ").append(EOL);
 
                 StringBuffer sbGenetics = new StringBuffer();
@@ -530,17 +522,16 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
                 sbGenetics.append("        or lower(a2.symbol) like '%").append(strainParams.getGeneticName().toLowerCase()).append("%') ").append(EOL);
                 sbGenetics.append("   and ama._AlleleMarkerAssocType_key in (1,3,4) ").append(EOL);
 
-               
                 log.debug(sbGenetics.toString());
-                
+
                 stmtBatch.addBatch(sbGenetics.toString());
             }
 
             // types
             if ((strainParams.getStrainTypes() != null) && (strainParams.getStrainTypes().size() != 0)) {
                 String t = DAOUtils.collectionToString(strainParams.getStrainTypes(), ", ", "");
-    
-               // sbSelect.append(" and sta._StrainType_key in (").append(t).append(") ").append(EOL);
+
+                // sbSelect.append(" and sta._StrainType_key in (").append(t).append(") ").append(EOL);
                 sbSelect.append(" and s._strain_key in (select _strain_key from StrainTypeAssoc where _straintype_key in  (").append(t).append(") )").append(EOL);
             }
 
@@ -568,20 +559,17 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
             stmtBatch.executeBatch();
             timerTempDAO.stop();
 
-            
             log.info("Batch took: " + timerTempDAO.toString());
 
             stmtSelect = conn.createStatement();
-            
+
             log.debug(sbSelect.toString());
 
             timerTempDAO.restart();
             rs = stmtSelect.executeQuery(sbSelect.toString());
             timerTempDAO.stop();
 
-            
             log.info("Getting ResultSet took: " + timerTempDAO.toString());
-            
 
             List<String> strainTypes = null;
             MTBStrainSearchDTO prevStrain = new MTBStrainSearchDTO();
@@ -609,11 +597,11 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
 
                     if (c == null) {
                         c = new ArrayList<String>();
-                    }else{
-                   // dont include duplicate types
-                    if(!((ArrayList<String>)c).get(c.size()-1).equals(strainType))
-                     
-                    c.add(strainType);
+                    } else {
+                        // dont include duplicate types
+                        if (!((ArrayList<String>) c).get(c.size() - 1).equals(strainType)) {
+                            c.add(strainType);
+                        }
                     }
                     s.setTypes(c);
 
@@ -626,9 +614,6 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
 
             timerTempDAO.stop();
 
-            
-
-           
         } catch (SQLException sqle) {
             log.error("Error performing strain search", sqle);
             throw new DAOException(sqle);
@@ -642,10 +627,9 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
 
         // here is where the magic of sorting and returning the corect number
         // of rows happens
-
         timerTempDAO.restart();
 
-        MTBStrainSearchDTO strainArrTemp[] = (MTBStrainSearchDTO [])arrStrains.toArray(new MTBStrainSearchDTO[arrStrains.size()]);
+        MTBStrainSearchDTO strainArrTemp[] = (MTBStrainSearchDTO[]) arrStrains.toArray(new MTBStrainSearchDTO[arrStrains.size()]);
         MTBStrainSearchDTO strainArr[] = null;
 
         if ("name".equalsIgnoreCase(strOrderBy)) {
@@ -655,8 +639,8 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
         }
 
         if (lMaxItems > 0) {
-            strainArr = new MTBStrainSearchDTO[Math.min((int)lMaxItems, strainArrTemp.length)];
-            System.arraycopy(strainArrTemp, 0, strainArr, 0, Math.min((int)lMaxItems, strainArrTemp.length));
+            strainArr = new MTBStrainSearchDTO[Math.min((int) lMaxItems, strainArrTemp.length)];
+            System.arraycopy(strainArrTemp, 0, strainArr, 0, Math.min((int) lMaxItems, strainArrTemp.length));
             arrStrains = new ArrayList<MTBStrainSearchDTO>(Arrays.asList(strainArr));
         } else {
             arrStrains = new ArrayList<MTBStrainSearchDTO>(Arrays.asList(strainArrTemp));
@@ -665,16 +649,15 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
         timerTempDAO.stop();
         timerDAO.stop();
 
-        
         log.info("Sorting ResultSet took: " + timerTempDAO.toString());
         log.info("Search took: " + timerDAO.toString());
-
 
         resultWrapper.setList(arrStrains);
         resultWrapper.setTotal(totalItemsFound);
 
         return resultWrapper;
     }
+
     /**
      * Get an accession id by the strain key.
      *
@@ -708,10 +691,7 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
 
     // ------------------------------------------------------ Protected Methods
     // none
-
     // -------------------------------------------------------- Private Methods
-
-   
     private List<StrainNotesDTO> getStrainNotes(long lKey) {
         Timer timer = new Timer();
         List<StrainNotesDTO> strainNotes = new ArrayList<StrainNotesDTO>();
@@ -785,9 +765,7 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
             freeConnection(conn);
         }
 
-        
         log.info("Getting strain synonyms took: " + timer.toString());
-        
 
         return strainSynonyms;
     }
@@ -824,9 +802,7 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
             freeConnection(conn);
         }
 
-        
         log.info("Getting strain references took: " + timer.toString());
-        
 
         return strainReferences;
     }
@@ -845,7 +821,6 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
             pstmt.setLong(1, lKey);
             rs = pstmt.executeQuery();
 
-           
             MTBStrainTumorDetailsDTO dtoPrevTumor = new MTBStrainTumorDetailsDTO();
 
             // loop through the results
@@ -868,17 +843,14 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
                 currentTumor.setRefAccId(rs.getString(19));
                 currentTumor.setRefShortCitation(rs.getString(20));
                 currentTumor.setCytoImages(rs.getInt(21));
-               
-               
-                
+
                 if (dtoPrevTumor.getTumorFrequencyKey() == currentTumor.getTumorFrequencyKey()) {
                     MTBStrainTumorDetailsDTO ts = listTumors.get(listTumors.size() - 1);
                     ts.addAgentKey(rs.getString(17));
                     ts.addAgent(rs.getString(18));
-                    
-                    
-                    if(ts.getTreatmentType().indexOf(currentTumor.getTreatmentType()) == -1){
-                      ts.setTreatmentType(ts.getTreatmentType()+", "+currentTumor.getTreatmentType());
+
+                    if (ts.getTreatmentType().indexOf(currentTumor.getTreatmentType()) == -1) {
+                        ts.setTreatmentType(ts.getTreatmentType() + ", " + currentTumor.getTreatmentType());
                     }
 
                     listTumors.set(listTumors.size() - 1, ts);
@@ -886,7 +858,7 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
                     dtoPrevTumor = currentTumor;
                     currentTumor.addAgentKey(rs.getString(17));
                     currentTumor.addAgent(rs.getString(18));
-                    
+
                     listTumors.add(currentTumor);
                 }
             }
@@ -897,12 +869,11 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
             freeConnection(conn);
         }
 
-        
         Map<String, MTBStrainTumorSummaryDTO> mapConsolidatedMetsTumors = consolidateMetastatsis(listTumors);
         Map<String, MTBStrainTumorSummaryDTO> mapConsolidatedTumors = consolidateTumors(mapConsolidatedMetsTumors);
         Collection<MTBStrainTumorSummaryDTO> colTumors = mapConsolidatedTumors.values();
 
-        MTBStrainTumorSummaryDTO tumorArrTemp[] = (MTBStrainTumorSummaryDTO [])colTumors.toArray(new MTBStrainTumorSummaryDTO[colTumors.size()]);
+        MTBStrainTumorSummaryDTO tumorArrTemp[] = (MTBStrainTumorSummaryDTO[]) colTumors.toArray(new MTBStrainTumorSummaryDTO[colTumors.size()]);
         MTBStrainTumorSummaryDTO arrTumor[] = null;
         arrTumor = new MTBStrainTumorSummaryDTO[tumorArrTemp.length];
         System.arraycopy(tumorArrTemp, 0, arrTumor, 0, tumorArrTemp.length);
@@ -910,9 +881,7 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
         // sort the tumors
         Arrays.sort(arrTumor, new MTBStrainTumorSummaryComparator(MTBTumorUtilDAO.ID_ORGAN));
 
-        
         log.info("Getting associated tumors took: " + timer.toString());
-        
 
         return new ArrayList<MTBStrainTumorSummaryDTO>(Arrays.asList(arrTumor));
     }
@@ -936,21 +905,13 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
                 MTBStrainGeneticsDTO dtoStrainGenetics = new MTBStrainGeneticsDTO();
                 // postgres returns this as an integer?
                 //String strTemp = rs.getString(3);
-              
-               
-                    dtoStrainGenetics.setMarkerId(rs.getInt(3));
-                
 
-               // strTemp = rs.getString(16);
-              
-               
-                    dtoStrainGenetics.setAllelePairId(rs.getInt(16));
-               
+                dtoStrainGenetics.setMarkerId(rs.getInt(3));
 
-            
-               
-                    dtoStrainGenetics.setGenotypeId(rs.getInt(17));
-               
+                // strTemp = rs.getString(16);
+                dtoStrainGenetics.setAllelePairId(rs.getInt(16));
+
+                dtoStrainGenetics.setGenotypeId(rs.getInt(17));
 
                 dtoStrainGenetics.setChromosome(DAOUtils.nvl(rs.getString(1), ""));
                 dtoStrainGenetics.setOrganism(DAOUtils.nvl(rs.getString(2), ""));
@@ -958,46 +919,28 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
                 dtoStrainGenetics.setMarkerName(DAOUtils.nvl(rs.getString(5), ""));
                 dtoStrainGenetics.setMarkerUrl(DAOUtils.nvl(rs.getString(12), "").replace("reference", "marker"));
 
-              
-                 dtoStrainGenetics.setAllele1Id(rs.getInt(6));
-              
-                    
+                dtoStrainGenetics.setAllele1Id(rs.getInt(6));
+
                 dtoStrainGenetics.setAllele1Type(DAOUtils.nvl(rs.getString(8), ""));
                 dtoStrainGenetics.setAllele1Symbol(DAOUtils.nvl(rs.getString(7), ""));
 
                 // NOTE: not supposed to link to any alleles that hava a
                 // '+' character in the name
-              String  strTemp = DAOUtils.nvl(rs.getString(13), "").replace("reference","allele");
+                String strTemp = DAOUtils.nvl(rs.getString(13), "").replace("reference", "allele");
 
-                if (StringUtils.hasValue(strTemp)) {
-                    String symb = dtoStrainGenetics.getAllele1Symbol();
-                    if (symb.indexOf('+') == -1) {
-                        dtoStrainGenetics.setAllele1Url(strTemp);
-                    }
-                }
+                dtoStrainGenetics.setAllele1Url(strTemp);
 
-       
-                    dtoStrainGenetics.setAllele2Id(rs.getInt(9));
-           
+                dtoStrainGenetics.setAllele2Id(rs.getInt(9));
 
                 dtoStrainGenetics.setAllele2Type(DAOUtils.nvl(rs.getString(11), ""));
                 dtoStrainGenetics.setAllele2Symbol(DAOUtils.nvl(rs.getString(10), ""));
 
-                // NOTE: not supposed to link to any alleles that hava a
-                // '+' character in the name
-                strTemp = DAOUtils.nvl(rs.getString(14), "").replace("reference","allele");
+                strTemp = DAOUtils.nvl(rs.getString(14), "").replace("reference", "allele");
 
-                if (StringUtils.hasValue(strTemp)) {
-                    String symb = dtoStrainGenetics.getAllele2Symbol();
-                    if (symb.indexOf('+') == -1) {
-                        dtoStrainGenetics.setAllele2Url(strTemp);
-                    }
-                }
+                dtoStrainGenetics.setAllele2Url(strTemp);
 
                 // reference
-                
-                    dtoStrainGenetics.setReferenceId(rs.getInt(15));
-                
+                dtoStrainGenetics.setReferenceId(rs.getInt(15));
 
                 strainGenetics.add(dtoStrainGenetics);
             }
@@ -1008,9 +951,8 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
             freeConnection(conn);
         }
 
-        
         log.info("Getting strain genetics took: " + timer.toString());
-        
+
         return strainGenetics;
     }
 
@@ -1051,19 +993,16 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
                 String accessionUrl = rs.getString(9);
                 String accessionNumber = rs.getString(4);
                 int siteId = rs.getInt(5);
-                
+
                 accessionUrl = accessionUrl.replaceAll("@@@@", accessionNumber);
 
                 link.setSiteName(DAOUtils.nvl(siteName, siteUrl));
                 link.setSiteUrl(siteUrl);
                 link.setAccessionUrl(accessionUrl);
 
-               
-                 
-
-                if ((siteId == SITE_ID_CARDIFF) ||
-                    (siteId == SITE_ID_LOTHAR) ||
-                    (siteId == SITE_ID_NCIMR)) {
+                if ((siteId == SITE_ID_CARDIFF)
+                        || (siteId == SITE_ID_LOTHAR)
+                        || (siteId == SITE_ID_NCIMR)) {
                     linksGeneral.add(link);
                 } else {
                     links.add(link);
@@ -1079,15 +1018,12 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
         hashMap.put(COLLECTION_LINKS, links);
         hashMap.put(COLLECTION_LINKS_GENERAL, linksGeneral);
 
-        
         log.info("Getting strain accession data took: " + timer.toString());
-        
+
         return hashMap;
     }
-        
-      
 
-     public ArrayList<LabelValueBean> getStrainsForGrid() {
+    public ArrayList<LabelValueBean> getStrainsForGrid() {
         ArrayList<LabelValueBean> strains = new ArrayList<LabelValueBean>();
         Connection conn = null;
         ResultSet rs = null;
@@ -1097,7 +1033,7 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
             StringBuffer sbSelect = new StringBuffer();
             sbSelect.append("select distinct sf.family, sf._strainfamily_key from StrainFamily sf, Strain s, TumorFrequency tf ");
             sbSelect.append("where sf._strainfamily_key = s._strainfamily_key ");
-            sbSelect.append("and  s._strain_key = tf._strain_key "); 
+            sbSelect.append("and  s._strain_key = tf._strain_key ");
             sbSelect.append("and s._strain_key in (select _Strain_key from StrainTypeAssoc where _StrainType_key in (8)) ");
             sbSelect.append(" order by sf.family ");
 
@@ -1118,8 +1054,5 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
 
         return strains;
     }
-     
-   
 
-   
 }
