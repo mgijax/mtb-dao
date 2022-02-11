@@ -137,7 +137,7 @@ public class MTBAdvancedSearchDAO extends MTBUtilDAO {
         "   and tf._Strain_key = s._Strain_key " +
         "   and tf._OrganAffected_key = oa._Organ_key " +
         "   and tf._TumorFrequency_key = m.tfkey " +
-        "   and tf._reference_key = acc._object_key and acc._mtbtypes_key = 6 and acc._siteinfo_key = 1 "+
+        "   and tf._reference_key = acc._object_key and acc._mtbtypes_key = 6 and acc._siteinfo_key = 1 " +
         "   and tc._tumorclassification_key != 228 ";  // added this 09-15-15
 
     // -------------------------------------------------------------- Constants

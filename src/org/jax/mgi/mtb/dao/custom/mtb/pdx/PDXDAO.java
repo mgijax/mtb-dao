@@ -995,7 +995,7 @@ public class PDXDAO {
         
         String clause ="";
         if(forPublic){
-            clause = " where tag !='Suspended' ";
+            clause = " where tag !='Suspended' and modelStatus !='Active: Available' ";
         }
         try {
             Connection con = getConnection();
@@ -1131,8 +1131,8 @@ public class PDXDAO {
      }
      
      public ArrayList<String> findModels(String modelID, ArrayList<String> tissues,
-            ArrayList<String> diagnoses, ArrayList<String> tumorTypes,
-            ArrayList<String> tags, boolean treatmentNaive){
+            ArrayList<String> diagnoses,
+            ArrayList<String> tags, boolean treatmentNaive,boolean forPublic){
          
          //tissues -->primary site (or)
          //and
@@ -1144,13 +1144,14 @@ public class PDXDAO {
          
          ArrayList<String> list = new ArrayList<>(); 
         
+         
         
         try {
             
             StringBuilder sql = new StringBuilder("select distinct modelid from pdxmodel where true ");
             
             if(modelID != null && !modelID.isEmpty()){
-                sql.append("and modelid = '").append(modelID).append("'");
+                sql.append("and modelid = ?");
             }
             if(tissues != null && !tissues.isEmpty()){
                 sql.append("and  primarysite in (");
@@ -1175,9 +1176,15 @@ public class PDXDAO {
              sql.append(" and treatmentnaive = 'Yes'");
             }
             
+            if(forPublic){
+                sql.append(" and modelstatus != 'Active: Available'");
+            }
             
             Connection con = getConnection();
             PreparedStatement s = con.prepareStatement(sql.toString());
+            if(modelID != null && !modelID.isEmpty()){
+                s.setString(1, modelID);
+            }
             
             
             ResultSet r = s.executeQuery();
