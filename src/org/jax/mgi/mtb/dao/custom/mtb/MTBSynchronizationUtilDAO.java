@@ -14,7 +14,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import org.apache.log4j.Logger;
 import org.jax.mgi.mtb.dao.gen.mtb.AlleleDAO;
 import org.jax.mgi.mtb.dao.gen.mtb.AlleleDTO;
@@ -948,8 +947,8 @@ public class MTBSynchronizationUtilDAO extends MTBUtilDAO {
         try {
 
             StringBuffer query = new StringBuffer();
-            query.append("select nc.note ").append(EOL);
-            query.append("  from ALL_Allele al left join (MGI_Note n left join MGI_NoteChunk nc on (n._Note_key = nc._Note_key)) ");
+            query.append("select n.note ").append(EOL);
+            query.append("  from ALL_Allele al left join MGI_Note n  ");
             query.append(" on (al._Allele_key = n._Object_key), ").append(EOL);
             query.append("       ACC_Accession ac ").append(EOL);
             query.append(" where al._Allele_key = ac._Object_key ").append(EOL);
@@ -959,7 +958,7 @@ public class MTBSynchronizationUtilDAO extends MTBUtilDAO {
             query.append("   and ac._LogicalDB_key = 1 ").append(EOL);
             query.append("   and ac.private = 0 ").append(EOL);
             query.append("   and ac.accID = '").append(accID).append('\'').append(EOL);
-            query.append("   order by nc.sequenceNum ").append(EOL);
+          
 
             stmt = conn.createStatement();
             rs = stmt.executeQuery(query.toString());
@@ -990,7 +989,7 @@ public class MTBSynchronizationUtilDAO extends MTBUtilDAO {
     }
     
      private HashMap<Long,AlleleDTO> getMGIAlleles(String ids) {
-        StringBuilder note = new StringBuilder();
+        
         Statement stmt = null;
         ResultSet rs = null;
         Connection conn = null;
@@ -1008,8 +1007,8 @@ public class MTBSynchronizationUtilDAO extends MTBUtilDAO {
             stmt.executeBatch();
             
             StringBuilder query = new StringBuilder();
-            query.append("select al._allele_key, nc.note ").append(EOL);
-            query.append("  from ALL_Allele al left join (MGI_Note n left join MGI_NoteChunk nc on (n._Note_key = nc._Note_key)) ");
+            query.append("select al._allele_key, n.note ").append(EOL);
+            query.append("  from ALL_Allele al left join MGI_Note n  ");
             query.append(" on (al._Allele_key = n._Object_key), ").append(EOL);
             query.append("       ACC_Accession ac, allele_ids ").append(EOL);
             query.append(" where al._Allele_key = ac._Object_key ").append(EOL);
@@ -1019,29 +1018,18 @@ public class MTBSynchronizationUtilDAO extends MTBUtilDAO {
             query.append("   and ac._LogicalDB_key = 1 ").append(EOL);
             query.append("   and ac.private = 0 ").append(EOL);
             query.append("   and ac.numericpart = allele_ids.id ").append(EOL);
-            query.append("   order by nc.sequenceNum ").append(EOL);
+           
 
             rs = stmt.executeQuery(query.toString());
 
-            String chunk;
-            long key = 0;
+            
             while (rs.next()) {
-                if(rs.getLong(1) != key){
-                    notes.put(key, note.toString());
-                    note = new StringBuilder(); 
-                    key = rs.getLong(1);
-                    
-                }
-                chunk = rs.getString(2);
-                if (chunk.trim().length() < 255) {
-                    // chunks that end w/ trailing spaces have them removed
-                    // if a chunk is less than 255 chars it may have a missing space
-                    note.append(chunk).append(" ");
-                } else {
-                    note.append(chunk);
-                }
+                
+                    long key = rs.getLong(1);
+                    String note = rs.getString(2);
+                    notes.put(key,note.toString());
             }
-            notes.put(key,note.toString());
+            
             
             
             query = new StringBuilder();
@@ -1066,7 +1054,7 @@ public class MTBSynchronizationUtilDAO extends MTBUtilDAO {
             while (rs.next()) {
                
                 AlleleDTO dtoAllele = AlleleDAO.getInstance().createAlleleDTO();
-                key = rs.getLong(1);
+                long key = rs.getLong(1);
 
                 dtoAllele.setName(rs.getString(2));
                 dtoAllele.setSymbol(rs.getString(3));
