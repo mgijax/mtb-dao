@@ -19,7 +19,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
 import org.jax.mgi.mtb.dao.custom.SearchResults;
 import org.jax.mgi.mtb.dao.custom.mtb.param.StrainSearchParams;
 import org.jax.mgi.mtb.dao.custom.mtb.param.TumorFrequencySearchParams;
@@ -63,7 +63,6 @@ import org.jax.mgi.mtb.utils.LabelValueBean;
 import org.jax.mgi.mtb.utils.LabelValueBeanComparator;
 import org.jax.mgi.mtb.utils.LabelValueDataBean;
 import org.jax.mgi.mtb.utils.StringUtils;
-import org.jax.mgi.mtb.utils.Timer;
 
 /**
  * A <code>MTBUtilDAO</code> which performs operations on
@@ -368,7 +367,7 @@ public class MTBTumorUtilDAO extends MTBUtilDAO {
 // ----------------------------------------------------- Instance Variables
     private static MTBTumorUtilDAO singleton = new MTBTumorUtilDAO();
     private static final Logger log =
-            Logger.getLogger(MTBTumorUtilDAO.class.getName());
+            org.apache.logging.log4j.LogManager.getLogger(MTBTumorUtilDAO.class.getName());
 
     // ----------------------------------------------------------- Constructors
     /**
@@ -434,9 +433,6 @@ public class MTBTumorUtilDAO extends MTBUtilDAO {
         Statement stmt = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
-        Timer timerDAO = new Timer();
-        Timer timerTempDAO = new Timer();
-        timerDAO.start();
 
         try {
             // get a connection
@@ -453,26 +449,16 @@ public class MTBTumorUtilDAO extends MTBUtilDAO {
             }
 
             // execute the batch
-            timerTempDAO.start();
+           
             stmt.executeBatch();
-            timerTempDAO.stop();
-
-            if (log.isInfoEnabled()) {
-                log.info("Batch took: " + timerTempDAO.toString());
-            }
+          
 
             // create and execute the main tumor frequency grid query
             pstmt = conn.prepareStatement(SQL_TFGRID);
 
-            timerTempDAO.restart();
+           
             rs = pstmt.executeQuery();
-            timerTempDAO.stop();
-
-            if (log.isInfoEnabled()) {
-                log.info("Getting ResultSet took: " + timerTempDAO.toString());
-            }
-
-            timerTempDAO.restart();
+         
 
             // loop through the results
             while (rs.next()) {
@@ -677,10 +663,7 @@ public class MTBTumorUtilDAO extends MTBUtilDAO {
                 mapData.put(nHeredityKey + "", dtoHeredity);
             }
 
-            timerTempDAO.stop();
-            if (log.isInfoEnabled()) {
-                log.info("Looping through ResultSet took: " + timerTempDAO.toString());
-            }
+           
         } catch (SQLException sqle) {
             log.error("Error generating Tumor Frequency Grid.", sqle);
         } finally {
@@ -689,11 +672,7 @@ public class MTBTumorUtilDAO extends MTBUtilDAO {
             freeConnection(conn);
         }
 
-        timerDAO.stop();
-
-        if (log.isInfoEnabled()) {
-            log.info("Generating Tumor Frequency Grid took: " + timerDAO.toString());
-        }
+      
 
         return mapData;
     }
@@ -720,9 +699,8 @@ public class MTBTumorUtilDAO extends MTBUtilDAO {
         Statement stmt = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
-        Timer timerDAO = new Timer();
-        Timer timerTempDAO = new Timer();
-        timerDAO.start();
+       
+      
 
         try {
             conn = getConnection();
@@ -741,13 +719,11 @@ public class MTBTumorUtilDAO extends MTBUtilDAO {
             log.debug(SQL_TFGRID_ORGANS_TEMP2);
 
 
-            timerTempDAO.start();
+           
             stmt.executeBatch();
-            timerTempDAO.stop();
+          
 
-            if (log.isInfoEnabled()) {
-                log.info("Batch took: " + timerTempDAO.toString());
-            }
+          
             String sqlOrgans = SQL_TFGRID_ORGANS;
 
             if (organGrpKeys != null) {
@@ -761,21 +737,15 @@ public class MTBTumorUtilDAO extends MTBUtilDAO {
             }
 
             pstmt = conn.prepareStatement(sqlOrgans);
-            timerTempDAO.restart();
+         
             rs = pstmt.executeQuery();
-            timerTempDAO.stop();
-
-            if (log.isInfoEnabled()) {
-                log.info("Getting ResultSet took: " + timerTempDAO.toString());
-            }
+          
 
             MTBTFGridAnatomicalSystemHeaderRowDTO dto = null;
             long lAnatomicalSystemKey = -1l;
             long lTempAnatomicalSystemKey = -2l;
             long lOrganParentKey = -3l;
             long lTempOrganParentKey = -4l;
-
-            timerTempDAO.restart();
 
             while (rs.next()) {
                 lTempAnatomicalSystemKey = rs.getLong(1);
@@ -850,23 +820,13 @@ public class MTBTumorUtilDAO extends MTBUtilDAO {
                 }
             }
 
-            timerTempDAO.stop();
-
-            if (log.isInfoEnabled()) {
-                log.info("Looping through ResultSet took: " + timerTempDAO.toString());
-            }
+            
         } catch (SQLException sqle) {
             log.error("Error getting Organs for Tumor Frequency Grid", sqle);
         } finally {
             close(stmt);
             close(pstmt, rs);
             freeConnection(conn);
-        }
-
-        timerDAO.stop();
-
-        if (log.isInfoEnabled()) {
-            log.info("Retrieving Organs for Tumor Frequency Grid took: " + timerDAO.toString());
         }
 
         return ret;
@@ -894,10 +854,8 @@ public class MTBTumorUtilDAO extends MTBUtilDAO {
         Statement stmt = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
-        Timer timerDAO = new Timer();
-        Timer timerTempDAO = new Timer();
-        timerDAO.start();
-
+      
+      
         try {
             conn = getConnection();
 
@@ -908,13 +866,10 @@ public class MTBTumorUtilDAO extends MTBUtilDAO {
                 log.debug(SQL_TFGRID_STRAINS_TEMP);
             }
 
-            timerTempDAO.start();
+        
             stmt.executeBatch();
-            timerTempDAO.start();
+        
 
-            if (log.isInfoEnabled()) {
-                log.info("Batch took: " + timerTempDAO.toString());
-            }
             String sqlStrains = SQL_TFGRID_STRAINS;
 
             if ((strainFamilyKeys != null) && (strainKeys != null)) {
@@ -935,13 +890,10 @@ public class MTBTumorUtilDAO extends MTBUtilDAO {
             log.debug(sqlStrains);
             pstmt = conn.prepareStatement(sqlStrains);
 
-            timerTempDAO.restart();
+       
             rs = pstmt.executeQuery();
-            timerTempDAO.start();
+          
 
-            if (log.isInfoEnabled()) {
-                log.info("Getting ResultSet took: " + timerTempDAO.toString());
-            }
 
             MTBTFGridStrainHeredityRowDTO dto = null;
             long lStrainHeredityKey = -1l;
@@ -949,8 +901,7 @@ public class MTBTumorUtilDAO extends MTBUtilDAO {
             long lStrainFamilyKey = -3l;
             long lTempStrainFamilyKey = -4l;
 
-            timerTempDAO.restart();
-
+     
             while (rs.next()) {
                 lTempStrainHeredityKey = rs.getLong(1);
                 lTempStrainFamilyKey = rs.getLong(3);
@@ -1024,11 +975,7 @@ public class MTBTumorUtilDAO extends MTBUtilDAO {
             }
 
 
-            timerTempDAO.stop();
-
-            if (log.isInfoEnabled()) {
-                log.info("Looping through ResultSet took: " + timerTempDAO.toString());
-            }
+           
         } catch (SQLException sqle) {
             log.error("Error getting Strains for Tumor Frequency Grid", sqle);
         } finally {
@@ -1037,11 +984,7 @@ public class MTBTumorUtilDAO extends MTBUtilDAO {
             freeConnection(conn);
         }
 
-        timerDAO.stop();
-
-        if (log.isInfoEnabled()) {
-            log.info("Retrieving Strains for Tumor Frequency Grid took: " + timerDAO.toString());
-        }
+      
 
         return ret;
     }
@@ -1444,7 +1387,7 @@ public class MTBTumorUtilDAO extends MTBUtilDAO {
             }
             freeConnection(conn);
         } catch (Exception e) {
-            log.error("Error getting summary", e);
+            log.error("Error getting tumor summary", e);
         }
 
         return tumor;

@@ -12,7 +12,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
 import org.jax.mgi.mtb.dao.utils.DAOUtils;
 import org.jax.mgi.mtb.utils.StringUtils;
 
@@ -25,7 +25,7 @@ import org.jax.mgi.mtb.utils.StringUtils;
 public class PDXDAO {
    
     private static final Logger log
-            = Logger.getLogger(PDXDAO.class.getName());
+            = org.apache.logging.log4j.LogManager.getLogger(PDXDAO.class.getName());
     private static PDXDAO singleton = null;
     private static String driver;
     private static String url;

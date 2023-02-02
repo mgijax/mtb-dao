@@ -16,7 +16,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
 import org.jax.mgi.mtb.dao.DAOException;
 import org.jax.mgi.mtb.dao.custom.SearchResults;
 import org.jax.mgi.mtb.dao.gen.mtb.AgentDAO;
@@ -41,7 +41,6 @@ import org.jax.mgi.mtb.dao.utils.DAOUtils;
 import org.jax.mgi.mtb.utils.LabelValueBean;
 import org.jax.mgi.mtb.utils.LabelValueBeanComparator;
 import org.jax.mgi.mtb.utils.StringUtils;
-import org.jax.mgi.mtb.utils.Timer;
 
 /**
  * A <code>MTBUtilDAO</code> which performs operations on <code>Image</code>
@@ -215,7 +214,7 @@ public class MTBPathologyImageUtilDAO  extends MTBUtilDAO {
     private static MTBPathologyImageUtilDAO singleton =
             new MTBPathologyImageUtilDAO();
     private final static Logger log =
-            Logger.getLogger(MTBPathologyImageUtilDAO.class.getName());
+            org.apache.logging.log4j.LogManager.getLogger(MTBPathologyImageUtilDAO.class.getName());
 
     // ----------------------------------------------------------- Constructors
 
@@ -576,9 +575,6 @@ public class MTBPathologyImageUtilDAO  extends MTBUtilDAO {
         Connection conn = null;
         ResultSet rs = null;
         Statement stmtSelect = null;
-
-        Timer t = new Timer();
-        t.start();
 
         try {
             conn = getConnection();

@@ -11,7 +11,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
 import org.jax.mgi.mtb.dao.utils.DAOUtils;
 import org.jax.mgi.mtb.utils.StringUtils;
 
@@ -59,7 +59,7 @@ public class MTBStrainTumorSummaryDTO {
     private Map<String,Citation> citations;
     
     private static final Logger log =
-            Logger.getLogger(MTBStrainTumorSummaryDTO.class.getName());
+            org.apache.logging.log4j.LogManager.getLogger(MTBStrainTumorSummaryDTO.class.getName());
    
     // ----------------------------------------------------------- Constructors
 

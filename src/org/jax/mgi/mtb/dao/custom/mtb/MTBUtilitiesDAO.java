@@ -9,7 +9,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
 import org.jax.mgi.mtb.dao.mtb.MTBUtilDAO;
 import org.jax.mgi.mtb.utils.LabelValueBean;
 
@@ -30,7 +30,7 @@ public class MTBUtilitiesDAO extends MTBUtilDAO {
 
     private static MTBUtilitiesDAO singleton = new MTBUtilitiesDAO();
     private static final Logger log =
-            Logger.getLogger(MTBUtilitiesDAO.class.getName());
+            org.apache.logging.log4j.LogManager.getLogger(MTBUtilitiesDAO.class.getName());
 
     // ----------------------------------------------------------- Constructors
 

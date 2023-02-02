@@ -10,7 +10,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
 import org.jax.mgi.mtb.dao.DAOException;
 import org.jax.mgi.mtb.dao.custom.SearchResults;
 import org.jax.mgi.mtb.dao.mtb.MTBUtilDAO;
@@ -35,7 +35,7 @@ public class MTBPathologyUtilDAO extends MTBUtilDAO {
 
     private static MTBPathologyUtilDAO singleton = new MTBPathologyUtilDAO();
     private final static Logger log =
-            Logger.getLogger(MTBPathologyUtilDAO.class.getName());
+            org.apache.logging.log4j.LogManager.getLogger(MTBPathologyUtilDAO.class.getName());
 
     // ----------------------------------------------------------- Constructors
 

@@ -55,6 +55,10 @@ public class PDXMouse {
     private int socGraph = 0;
     
     private String mrn;
+    
+    private ArrayList<GenomicsLink> expressionLinks = new ArrayList<>();
+    private ArrayList<GenomicsLink> variationLinks = new ArrayList<>();
+    private ArrayList<GenomicsLink> cnvLinks = new ArrayList<>();
 
     public PDXMouse() {
 
@@ -87,7 +91,8 @@ public class PDXMouse {
         // don't duplicate these they are query specific
         //m2.gene = this.getGene();
         //m2.variant = this.getVariant();
-        //m2.consequence = this.getConsequenc();           
+        //m2.consequence = this.getConsequece();   
+        
         m2.currentSmoker = this.getCurrentSmoker();
         m2.formerSmoker = this.getFormerSmoker();
         m2.treatmentNaive = this.getTreatmentNaive();
@@ -100,6 +105,10 @@ public class PDXMouse {
         m2.setSocGraph(this.getSocGraph());
         
         m2.tmb = this.tmb;
+        
+        m2.expressionLinks = this.getExpressionLinks();
+        m2.cnvLinks = this.getCnvLinks();
+        m2.variationLinks = this.getVariationLinks();
 
         return m2;
     }
@@ -607,5 +616,47 @@ public class PDXMouse {
      */
     public void setMrn(String mrn) {
         this.mrn = mrn;
+    }
+
+    /**
+     * @return the expressionLinks
+     */
+    public ArrayList<GenomicsLink> getExpressionLinks() {
+        return expressionLinks;
+    }
+
+    /**
+     * @param expressionLinks the expressionLinks to set
+     */
+    public void setExpressionLinks(ArrayList<GenomicsLink> expressionLinks) {
+        this.expressionLinks = expressionLinks;
+    }
+
+    /**
+     * @return the variationLinks
+     */
+    public ArrayList<GenomicsLink> getVariationLinks() {
+        return variationLinks;
+    }
+
+    /**
+     * @param variationLinks the variationLinks to set
+     */
+    public void setVariationLinks(ArrayList<GenomicsLink> variationLinks) {
+        this.variationLinks = variationLinks;
+    }
+
+    /**
+     * @return the cnvLinks
+     */
+    public ArrayList<GenomicsLink> getCnvLinks() {
+        return cnvLinks;
+    }
+
+    /**
+     * @param cnvLinks the cnvLinks to set
+     */
+    public void setCnvLinks(ArrayList<GenomicsLink> cnvLinks) {
+        this.cnvLinks = cnvLinks;
     }
 }

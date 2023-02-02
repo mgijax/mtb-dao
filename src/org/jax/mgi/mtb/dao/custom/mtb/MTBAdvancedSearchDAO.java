@@ -13,13 +13,12 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
 import org.jax.mgi.mtb.dao.DAOException;
 import org.jax.mgi.mtb.dao.custom.SearchResults; 
 import org.jax.mgi.mtb.dao.mtb.MTBUtilDAO;
 import org.jax.mgi.mtb.dao.utils.DAOUtils;
 import org.jax.mgi.mtb.utils.StringUtils;
-import org.jax.mgi.mtb.utils.Timer;
 
 /**
  * A <code>MTBUtilDAO</code> which performs a composite search on
@@ -138,7 +137,7 @@ public class MTBAdvancedSearchDAO extends MTBUtilDAO {
         "   and tf._OrganAffected_key = oa._Organ_key " +
         "   and tf._TumorFrequency_key = m.tfkey " +
         "   and tf._reference_key = acc._object_key and acc._mtbtypes_key = 6 and acc._siteinfo_key = 1 " +
-        "   and tc._tumorclassification_key != 228 ";  // added this 09-15-15
+        "   and tc._tumorclassification_key != 228 ";  // added this 09-15-15 exclude "normal"
 
     // -------------------------------------------------------------- Constants
 
@@ -152,7 +151,7 @@ public class MTBAdvancedSearchDAO extends MTBUtilDAO {
 
     private static MTBAdvancedSearchDAO singleton = new MTBAdvancedSearchDAO();
     private static final Logger log =
-            Logger.getLogger(MTBAdvancedSearchDAO.class.getName());
+            org.apache.logging.log4j.LogManager.getLogger(MTBAdvancedSearchDAO.class.getName());
 
     // ----------------------------------------------------------- Constructors
 
@@ -199,10 +198,7 @@ public class MTBAdvancedSearchDAO extends MTBUtilDAO {
         List<MTBStrainTumorDetailsDTO> tumors =
                 new ArrayList<MTBStrainTumorDetailsDTO>();
         int tumorFrequencyCount = 0;
-        Timer timerDAO = new Timer();
-        Timer timerTempDAO = new Timer();
-        timerDAO.start();
-        
+       
         try {
             conn = getConnection();
             stmtSelect = conn.createStatement();
@@ -371,9 +367,6 @@ public class MTBAdvancedSearchDAO extends MTBUtilDAO {
             log.debug(sbSelectTFs.toString());
             
             stmtBatch.addBatch(sbSelectTFs.toString());
-
-            
-            timerTempDAO.start();
             
             log.debug(SQL_ADVANCED_SEARCH_TEMP_MASTER[0]);
             
@@ -397,27 +390,15 @@ public class MTBAdvancedSearchDAO extends MTBUtilDAO {
             stmtBatch.addBatch("create index test_master_idx on master (tfkey)");
             
             stmtBatch.executeBatch();
-            timerTempDAO.stop();
-
-            if (log.isInfoEnabled()) {
-                log.info("Batch took: " + timerTempDAO.toString());
-            }
-
-            if (log.isDebugEnabled()) {
-                log.debug("EXECUTING: " + sbSelect.toString());
-            }
+         
 
             stmtSelect = conn.createStatement();
 
-            timerTempDAO.restart();
+          
             rs = stmtSelect.executeQuery(sbSelect.toString());
-            timerTempDAO.stop();
+           
 
-            if (log.isInfoEnabled()) {
-                log.info("Getting ResultSet took: " + timerTempDAO.toString());
-            }
-
-            timerTempDAO.restart();
+         
 
             MTBStrainTumorDetailsDTO prevTumor = new MTBStrainTumorDetailsDTO();
 
@@ -468,20 +449,11 @@ public class MTBAdvancedSearchDAO extends MTBUtilDAO {
             freeConnection(conn);
         }
 
-        timerTempDAO.stop();
-
-        if (log.isInfoEnabled()) {
-            log.info("Looping through ResultSet took: " + timerTempDAO.toString());
-        }
-
+       
         resultWrapper = configureSearchResults(tumors, strOrderBy, nMaxItems);
         resultWrapper.setAncillaryTotal(tumorFrequencyCount);
 
-        timerDAO.stop();
-
-        if (log.isInfoEnabled()) {
-            log.info("Search took: " + timerDAO.toString());
-        }
+        
 
         return resultWrapper;
     }
@@ -497,8 +469,7 @@ public class MTBAdvancedSearchDAO extends MTBUtilDAO {
                                    int nMaxItems) {
         SearchResults<MTBStrainTumorSummaryDTO> resultWrapper = 
                 new SearchResults<MTBStrainTumorSummaryDTO>();
-        Timer timer = new Timer();
-        timer.start();
+       
 
         try {
             Map<String, MTBStrainTumorSummaryDTO> consMetsTumors = consolidateMetastatsis(tumors);

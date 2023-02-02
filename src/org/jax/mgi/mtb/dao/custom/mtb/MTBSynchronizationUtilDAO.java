@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
 import org.jax.mgi.mtb.dao.gen.mtb.AlleleDAO;
 import org.jax.mgi.mtb.dao.gen.mtb.AlleleDTO;
 import org.jax.mgi.mtb.dao.gen.mtb.MarkerDAO;
@@ -51,7 +51,7 @@ public class MTBSynchronizationUtilDAO extends MTBUtilDAO {
     private String mgi_password;
  
     private static final Logger log =
-            Logger.getLogger(MTBSynchronizationUtilDAO.class.getName());
+            org.apache.logging.log4j.LogManager.getLogger(MTBSynchronizationUtilDAO.class.getName());
 
     // ----------------------------------------------------------- Constructors
     /**

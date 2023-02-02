@@ -14,10 +14,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
 import org.jax.mgi.mtb.dao.DAOException;
 import org.jax.mgi.mtb.dao.custom.SearchResults;
 import org.jax.mgi.mtb.dao.custom.mtb.param.StrainSearchParams;
@@ -36,7 +35,6 @@ import org.jax.mgi.mtb.dao.mtb.MTBUtilDAO;
 import org.jax.mgi.mtb.dao.utils.DAOUtils;
 import org.jax.mgi.mtb.utils.LabelValueBean;
 import org.jax.mgi.mtb.utils.StringUtils;
-import org.jax.mgi.mtb.utils.Timer;
 
 /**
  * A <code>MTBUtilDAO</code> which performs operations on <code>Strain</code>
@@ -193,7 +191,7 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
     // ----------------------------------------------------- Instance Variables
     private static MTBStrainUtilDAO singleton = new MTBStrainUtilDAO();
     private final static Logger log
-            = Logger.getLogger(MTBStrainUtilDAO.class.getName());
+            = org.apache.logging.log4j.LogManager.getLogger(MTBStrainUtilDAO.class.getName());
 
     // ----------------------------------------------------------- Constructors
     /**
@@ -388,9 +386,7 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
         ResultSet rs = null;
         Statement stmtSelect = null;
         Statement stmtBatch = null;
-        Timer timerDAO = new Timer();
-        Timer timerTempDAO = new Timer();
-        timerDAO.start();
+        
 
         try {
             // create the connection and the batch statement
@@ -555,26 +551,26 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
 
             sbSelect.append(" order by unspec, s.name, s._Strain_key, st.type ").append(EOL);
 
-            timerTempDAO.start();
+           
             stmtBatch.executeBatch();
-            timerTempDAO.stop();
+          
 
-            log.info("Batch took: " + timerTempDAO.toString());
+        
 
             stmtSelect = conn.createStatement();
 
             log.debug(sbSelect.toString());
 
-            timerTempDAO.restart();
+        
             rs = stmtSelect.executeQuery(sbSelect.toString());
-            timerTempDAO.stop();
+        
 
-            log.info("Getting ResultSet took: " + timerTempDAO.toString());
+         
 
             List<String> strainTypes = null;
             MTBStrainSearchDTO prevStrain = new MTBStrainSearchDTO();
 
-            timerTempDAO.restart();
+           
 
             while (rs.next()) {
                 MTBStrainSearchDTO currentStrain = new MTBStrainSearchDTO();
@@ -612,7 +608,7 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
                 }
             }
 
-            timerTempDAO.stop();
+          
 
         } catch (SQLException sqle) {
             log.error("Error performing strain search", sqle);
@@ -627,7 +623,7 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
 
         // here is where the magic of sorting and returning the corect number
         // of rows happens
-        timerTempDAO.restart();
+      
 
         MTBStrainSearchDTO strainArrTemp[] = (MTBStrainSearchDTO[]) arrStrains.toArray(new MTBStrainSearchDTO[arrStrains.size()]);
         MTBStrainSearchDTO strainArr[] = null;
@@ -645,12 +641,6 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
         } else {
             arrStrains = new ArrayList<MTBStrainSearchDTO>(Arrays.asList(strainArrTemp));
         }
-
-        timerTempDAO.stop();
-        timerDAO.stop();
-
-        log.info("Sorting ResultSet took: " + timerTempDAO.toString());
-        log.info("Search took: " + timerDAO.toString());
 
         resultWrapper.setList(arrStrains);
         resultWrapper.setTotal(totalItemsFound);
@@ -693,7 +683,7 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
     // none
     // -------------------------------------------------------- Private Methods
     private List<StrainNotesDTO> getStrainNotes(long lKey) {
-        Timer timer = new Timer();
+     
         List<StrainNotesDTO> strainNotes = new ArrayList<StrainNotesDTO>();
         Connection conn = null;
         PreparedStatement pstmt = null;
@@ -726,15 +716,13 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
             freeConnection(conn);
         }
 
-        if (log.isInfoEnabled()) {
-            log.info("Getting strain notes took: " + timer.toString());
-        }
+       
 
         return strainNotes;
     }
 
     private List<StrainSynonymsDTO> getStrainSynonyms(long lKey) {
-        Timer timer = new Timer();
+       
         List<StrainSynonymsDTO> strainSynonyms = new ArrayList<StrainSynonymsDTO>();
         Connection conn = null;
         PreparedStatement pstmt = null;
@@ -765,13 +753,11 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
             freeConnection(conn);
         }
 
-        log.info("Getting strain synonyms took: " + timer.toString());
-
         return strainSynonyms;
     }
 
     private List<ReferenceDTO> getStrainReferences(long lKey) {
-        Timer timer = new Timer();
+      
         List<ReferenceDTO> strainReferences = new ArrayList<ReferenceDTO>();
         Connection conn = null;
         PreparedStatement pstmt = null;
@@ -802,13 +788,11 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
             freeConnection(conn);
         }
 
-        log.info("Getting strain references took: " + timer.toString());
 
         return strainReferences;
     }
 
     private List<MTBStrainTumorSummaryDTO> getAssociatedTumors(long lKey, boolean bSimple) {
-        Timer timer = new Timer();
         List<MTBStrainTumorDetailsDTO> listTumors = new ArrayList<MTBStrainTumorDetailsDTO>();
         Connection conn = null;
         PreparedStatement pstmt = null;
@@ -881,13 +865,13 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
         // sort the tumors
         Arrays.sort(arrTumor, new MTBStrainTumorSummaryComparator(MTBTumorUtilDAO.ID_ORGAN));
 
-        log.info("Getting associated tumors took: " + timer.toString());
+      
 
         return new ArrayList<MTBStrainTumorSummaryDTO>(Arrays.asList(arrTumor));
     }
 
     private List<MTBStrainGeneticsDTO> getStrainGenetics(long lKey) {
-        Timer timer = new Timer();
+       
         List<MTBStrainGeneticsDTO> strainGenetics = new ArrayList<MTBStrainGeneticsDTO>();
         Connection conn = null;
         PreparedStatement pstmt = null;
@@ -951,13 +935,13 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
             freeConnection(conn);
         }
 
-        log.info("Getting strain genetics took: " + timer.toString());
+     
 
         return strainGenetics;
     }
 
     private Map<String, List<MTBStrainLinksDTO>> getAccessionInfo(long lKey) {
-        Timer timer = new Timer();
+       
         Map<String, List<MTBStrainLinksDTO>> hashMap = new HashMap<String, List<MTBStrainLinksDTO>>();
         List<MTBStrainLinksDTO> linksGeneral = new ArrayList<MTBStrainLinksDTO>();
         List<MTBStrainLinksDTO> links = new ArrayList<MTBStrainLinksDTO>();
@@ -1018,7 +1002,7 @@ public class MTBStrainUtilDAO extends MTBUtilDAO {
         hashMap.put(COLLECTION_LINKS, links);
         hashMap.put(COLLECTION_LINKS_GENERAL, linksGeneral);
 
-        log.info("Getting strain accession data took: " + timer.toString());
+       
 
         return hashMap;
     }

@@ -10,7 +10,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
 import org.jax.mgi.mtb.dao.gen.mtb.AgentDAO;
 import org.jax.mgi.mtb.dao.gen.mtb.AgentDTO;
 
@@ -107,7 +107,7 @@ public class MTBAssayImageUtilDAO extends MTBUtilDAO  {
 
  
     private final static Logger log =
-            Logger.getLogger(MTBAssayImageUtilDAO.class.getName());
+            org.apache.logging.log4j.LogManager.getLogger(MTBAssayImageUtilDAO.class.getName());
 
     // ----------------------------------------------------------- Constructors
 

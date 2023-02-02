@@ -13,7 +13,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
 import org.jax.mgi.mtb.dao.gen.mtb.SampleDAO;
 import org.jax.mgi.mtb.dao.gen.mtb.SampleDTO;
 import org.jax.mgi.mtb.dao.gen.mtb.SeriesSampleAssocDAO;
@@ -38,7 +38,7 @@ public class MTBSeriesSampleUtilDAO extends MTBUtilDAO {
     private static ArrayList<LabelValueBean<String, String>> platforms = new ArrayList<LabelValueBean<String, String>>();
     private static ArrayList<LabelValueBean<String, Long>> organs = new ArrayList<LabelValueBean<String, Long>>();
     private static ArrayList<LabelValueBean<String, Long>> tumorClassifications = new ArrayList<LabelValueBean<String, Long>>();
-    private static final Logger log = Logger.getLogger(MTBSeriesSampleUtilDAO.class.getName());
+    private static final Logger log = org.apache.logging.log4j.LogManager.getLogger(MTBSeriesSampleUtilDAO.class.getName());
     private static final String MTB_TYPE_KEYS = "1,2,3,5,6,7,8";
     private static final String SITE_INFO_KEYS = "106,107";
     private static final long SITE_GEO = 106;

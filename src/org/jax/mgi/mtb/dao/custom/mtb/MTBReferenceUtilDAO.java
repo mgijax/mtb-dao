@@ -17,7 +17,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
 import org.jax.mgi.mtb.dao.DAOException;
 import org.jax.mgi.mtb.dao.custom.SearchResults;
 import org.jax.mgi.mtb.dao.custom.mtb.param.ReferenceSearchParams;
@@ -35,7 +35,6 @@ import org.jax.mgi.mtb.utils.LabelValueBean;
 import org.jax.mgi.mtb.utils.LabelValueBeanComparator;
 import org.jax.mgi.mtb.utils.LabelValueDataBean;
 import org.jax.mgi.mtb.utils.StringUtils;
-import org.jax.mgi.mtb.utils.Timer;
 
 /**
  * A <code>MTBUtilDAO</code> which performs operations on <code>Reference</code>
@@ -102,7 +101,18 @@ public class MTBReferenceUtilDAO extends MTBUtilDAO {
             + "  and sl._SiteLinks_key != 106  "
             + // exclude the MGI marker link 
             "   and a._MTBTypes_key = 6  "
-            + "   and a._Object_key = ?";
+            + "   and a._Object_key = ? "
+            // include a link to MGI
+            + " union"
+            + " select si.description, sl.url, a.accId "
+            + "  from Accession a, "
+            + "        SiteInfo si, "
+            + "        SiteLinks sl "
+            + "  where 110 = si._SiteInfo_key  and a._siteinfo_key =1 "
+            + "    and si._SiteInfo_key = sl._SiteInfo_key "
+            + "   and sl._SiteLinks_key != 106 "
+            + "  and a._MTBTypes_key = 6 "
+            + "    and a._Object_key = ? ";
 
     private static final String SQL_SEARCH_REFERENCE_SELECT_FROM
             = "select r._Reference_key, r.authors, r.authors2, r.primaryAuthor, r.year, "
@@ -189,7 +199,7 @@ public class MTBReferenceUtilDAO extends MTBUtilDAO {
     public static final String ORG = "ORG";  // ----------------------------------------------------- Instance Variables
     private static MTBReferenceUtilDAO singleton = new MTBReferenceUtilDAO();
     private static final Logger log
-            = Logger.getLogger(MTBReferenceUtilDAO.class.getName());
+            = org.apache.logging.log4j.LogManager.getLogger(MTBReferenceUtilDAO.class.getName());
 
     // ----------------------------------------------------------- Constructors
     /**
@@ -678,7 +688,7 @@ public class MTBReferenceUtilDAO extends MTBUtilDAO {
     
     
     public List<StrainNotesDTO> getStrainNotes(long refKey, String delimiter) {
-        Timer timer = new Timer();
+       
         List<StrainNotesDTO> strainNotes = new ArrayList<StrainNotesDTO>();
         Connection conn = null;
         PreparedStatement pstmt = null;
@@ -715,10 +725,6 @@ public class MTBReferenceUtilDAO extends MTBUtilDAO {
             freeConnection(conn);
         }
 
-        if (log.isInfoEnabled()) {
-            log.info("Getting strain notes for reference took: " + timer.toString());
-        }
-
         return strainNotes;
     }
 
@@ -728,7 +734,7 @@ public class MTBReferenceUtilDAO extends MTBUtilDAO {
     // -------------------------------------------------------- Private Methods
     /**
      * Get the additional information associated with the reference. This
-     * additional information is the number of associated tumor frquencies,
+     * additional information is the number of associated tumor frequencies,
      * strains, and pathology reports.
      *
      * @param lKey the reference key
@@ -921,6 +927,7 @@ public class MTBReferenceUtilDAO extends MTBUtilDAO {
 
             pstmt = conn.prepareStatement(SQL_ACCESSION_IDS);
             pstmt.setLong(1, lKey);
+            pstmt.setLong(2, lKey);
             rs = pstmt.executeQuery();
 
             while (rs.next()) {
@@ -1085,7 +1092,7 @@ public class MTBReferenceUtilDAO extends MTBUtilDAO {
     
      private List<MTBStrainTumorSummaryDTO> getAssociatedTumors(long lKey) {
        
-        Timer timer = new Timer();
+       
         List<MTBStrainTumorDetailsDTO> listTumors = new ArrayList<MTBStrainTumorDetailsDTO>();
         Connection conn = null;
         PreparedStatement pstmt = null;
@@ -1161,8 +1168,7 @@ public class MTBReferenceUtilDAO extends MTBUtilDAO {
         Arrays.sort(arrTumor, new MTBStrainTumorSummaryComparator(MTBTumorUtilDAO.ID_ORGAN));
 
         
-        log.info("Getting associated tumors took: " + timer.toString());
-        
+       
 
         return new ArrayList<MTBStrainTumorSummaryDTO>(Arrays.asList(arrTumor));
     }

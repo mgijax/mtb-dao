@@ -17,7 +17,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
 import org.jax.mgi.mtb.dao.DAOException;
 import org.jax.mgi.mtb.dao.custom.SearchResults;
 import org.jax.mgi.mtb.dao.gen.mtb.AlleleDAO;
@@ -80,7 +80,7 @@ public class MTBGeneticsUtilDAO extends MTBUtilDAO {
  
   private static MTBGeneticsUtilDAO singleton = new MTBGeneticsUtilDAO();
   private static final Logger log =
-          Logger.getLogger(MTBGeneticsUtilDAO.class.getName());
+          org.apache.logging.log4j.LogManager.getLogger(MTBGeneticsUtilDAO.class.getName());
 
   // ----------------------------------------------------------- Constructors
   /**

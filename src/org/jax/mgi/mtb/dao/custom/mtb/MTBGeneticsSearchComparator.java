@@ -5,7 +5,7 @@
 package org.jax.mgi.mtb.dao.custom.mtb;
 
 import java.util.Comparator;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
 import org.jax.mgi.mtb.utils.StringUtils;
 
 /**
@@ -25,7 +25,7 @@ public class MTBGeneticsSearchComparator
 
   // ----------------------------------------------------- Instance Variables
   private static final Logger log =
-          Logger.getLogger(MTBGeneticsSearchComparator.class.getName());
+          org.apache.logging.log4j.LogManager.getLogger(MTBGeneticsSearchComparator.class.getName());
   /**
    * Holds the field on which the comparison is performed.
    */
